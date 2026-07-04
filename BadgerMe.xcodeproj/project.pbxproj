@@ -29,6 +29,20 @@
 		A204421E2FF9799A006BCCCF /* BadgerMeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BadgerMeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A20442372FF97DCE006BCCCF /* Exceptions for "Notes" folder in "BadgerMe" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"BadgerMe-Build-Specification.md",
+				"BadgerMe-Capability-Spike-Checklist.md",
+				BadgerReducer.swift,
+				BadgerReducerTests.swift,
+				"BadgerSpike-Project-Skeleton.md",
+			);
+			target = A20442042FF97998006BCCCF /* BadgerMe */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A20442072FF97998006BCCCF /* BadgerMe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -43,6 +57,14 @@
 		A20442212FF9799A006BCCCF /* BadgerMeUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BadgerMeUITests;
+			sourceTree = "<group>";
+		};
+		A20442312FF97DB0006BCCCF /* Notes */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A20442372FF97DCE006BCCCF /* Exceptions for "Notes" folder in "BadgerMe" target */,
+			);
+			path = Notes;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +97,7 @@
 		A20441FC2FF97998006BCCCF = {
 			isa = PBXGroup;
 			children = (
+				A20442312FF97DB0006BCCCF /* Notes */,
 				A20442072FF97998006BCCCF /* BadgerMe */,
 				A20442172FF9799A006BCCCF /* BadgerMeTests */,
 				A20442212FF9799A006BCCCF /* BadgerMeUITests */,
@@ -109,6 +132,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A20442072FF97998006BCCCF /* BadgerMe */,
+				A20442312FF97DB0006BCCCF /* Notes */,
 			);
 			name = BadgerMe;
 			packageProductDependencies = (
