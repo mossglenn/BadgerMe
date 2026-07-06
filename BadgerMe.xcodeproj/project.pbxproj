@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A2D0BA972FFC5ACE00729EFE /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2D0BA962FFC5ACE00729EFE /* WidgetKit.framework */; };
+		A2D0BA992FFC5ACE00729EFE /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2D0BA982FFC5ACE00729EFE /* SwiftUI.framework */; };
+		A2D0BAA82FFC5AD000729EFE /* BadgerMeWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A2D0BA942FFC5ACE00729EFE /* BadgerMeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A2D0BAB02FFC5C5800729EFE /* BadgerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2D0BAAF2FFC5C5800729EFE /* BadgerKit */; };
+		A2D0BAB32FFC5C8900729EFE /* BadgerKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2D0BAB22FFC5C8900729EFE /* BadgerKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		A20442152FF9799A006BCCCF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,25 +29,46 @@
 			remoteGlobalIDString = A20442042FF97998006BCCCF;
 			remoteInfo = BadgerMe;
 		};
+		A2D0BAA62FFC5AD000729EFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A20441FD2FF97998006BCCCF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A2D0BA932FFC5ACE00729EFE;
+			remoteInfo = BadgerMeWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A2D0BAAD2FFC5AD000729EFE /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A2D0BAA82FFC5AD000729EFE /* BadgerMeWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A20442052FF97998006BCCCF /* BadgerMe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BadgerMe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20442142FF9799A006BCCCF /* BadgerMeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BadgerMeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A204421E2FF9799A006BCCCF /* BadgerMeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BadgerMeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2D0BA942FFC5ACE00729EFE /* BadgerMeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BadgerMeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2D0BA962FFC5ACE00729EFE /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		A2D0BA982FFC5ACE00729EFE /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		A2D0BAB52FFC61B200729EFE /* BadgerMeWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BadgerMeWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A20442372FF97DCE006BCCCF /* Exceptions for "Notes" folder in "BadgerMe" target */ = {
+		A2D0BAAC2FFC5AD000729EFE /* Exceptions for "BadgerMeWidget" folder in "BadgerMeWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"BadgerMe-Build-Specification.md",
-				"BadgerMe-Capability-Spike-Checklist.md",
-				BadgerReducer.swift,
-				BadgerReducerTests.swift,
-				"BadgerSpike-Project-Skeleton.md",
+				Info.plist,
 			);
-			target = A20442042FF97998006BCCCF /* BadgerMe */;
+			target = A2D0BA932FFC5ACE00729EFE /* BadgerMeWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -61,10 +90,15 @@
 		};
 		A20442312FF97DB0006BCCCF /* Notes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				A20442372FF97DCE006BCCCF /* Exceptions for "Notes" folder in "BadgerMe" target */,
-			);
 			path = Notes;
+			sourceTree = "<group>";
+		};
+		A2D0BA9A2FFC5ACE00729EFE /* BadgerMeWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A2D0BAAC2FFC5AD000729EFE /* Exceptions for "BadgerMeWidget" folder in "BadgerMeWidgetExtension" target */,
+			);
+			path = BadgerMeWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -74,6 +108,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A2D0BAB32FFC5C8900729EFE /* BadgerKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,16 +126,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A2D0BA912FFC5ACE00729EFE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2D0BA992FFC5ACE00729EFE /* SwiftUI.framework in Frameworks */,
+				A2D0BAB02FFC5C5800729EFE /* BadgerKit in Frameworks */,
+				A2D0BA972FFC5ACE00729EFE /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		A20441FC2FF97998006BCCCF = {
 			isa = PBXGroup;
 			children = (
+				A2D0BAB52FFC61B200729EFE /* BadgerMeWidgetExtension.entitlements */,
 				A20442312FF97DB0006BCCCF /* Notes */,
 				A20442072FF97998006BCCCF /* BadgerMe */,
 				A20442172FF9799A006BCCCF /* BadgerMeTests */,
 				A20442212FF9799A006BCCCF /* BadgerMeUITests */,
+				A2D0BA9A2FFC5ACE00729EFE /* BadgerMeWidget */,
+				A2D0BA952FFC5ACE00729EFE /* Frameworks */,
 				A20442062FF97998006BCCCF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -111,8 +159,18 @@
 				A20442052FF97998006BCCCF /* BadgerMe.app */,
 				A20442142FF9799A006BCCCF /* BadgerMeTests.xctest */,
 				A204421E2FF9799A006BCCCF /* BadgerMeUITests.xctest */,
+				A2D0BA942FFC5ACE00729EFE /* BadgerMeWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A2D0BA952FFC5ACE00729EFE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A2D0BA962FFC5ACE00729EFE /* WidgetKit.framework */,
+				A2D0BA982FFC5ACE00729EFE /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -125,17 +183,19 @@
 				A20442012FF97998006BCCCF /* Sources */,
 				A20442022FF97998006BCCCF /* Frameworks */,
 				A20442032FF97998006BCCCF /* Resources */,
+				A2D0BAAD2FFC5AD000729EFE /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A2D0BAA72FFC5AD000729EFE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A20442072FF97998006BCCCF /* BadgerMe */,
-				A20442312FF97DB0006BCCCF /* Notes */,
 			);
 			name = BadgerMe;
 			packageProductDependencies = (
+				A2D0BAB22FFC5C8900729EFE /* BadgerKit */,
 			);
 			productName = BadgerMe;
 			productReference = A20442052FF97998006BCCCF /* BadgerMe.app */;
@@ -187,6 +247,29 @@
 			productReference = A204421E2FF9799A006BCCCF /* BadgerMeUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A2D0BA932FFC5ACE00729EFE /* BadgerMeWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A2D0BAA92FFC5AD000729EFE /* Build configuration list for PBXNativeTarget "BadgerMeWidgetExtension" */;
+			buildPhases = (
+				A2D0BA902FFC5ACE00729EFE /* Sources */,
+				A2D0BA912FFC5ACE00729EFE /* Frameworks */,
+				A2D0BA922FFC5ACE00729EFE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A2D0BA9A2FFC5ACE00729EFE /* BadgerMeWidget */,
+			);
+			name = BadgerMeWidgetExtension;
+			packageProductDependencies = (
+				A2D0BAAF2FFC5C5800729EFE /* BadgerKit */,
+			);
+			productName = BadgerMeWidgetExtension;
+			productReference = A2D0BA942FFC5ACE00729EFE /* BadgerMeWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -208,6 +291,9 @@
 						CreatedOnToolsVersion = 26.6;
 						TestTargetID = A20442042FF97998006BCCCF;
 					};
+					A2D0BA932FFC5ACE00729EFE = {
+						CreatedOnToolsVersion = 26.6;
+					};
 				};
 			};
 			buildConfigurationList = A20442002FF97998006BCCCF /* Build configuration list for PBXProject "BadgerMe" */;
@@ -219,6 +305,9 @@
 			);
 			mainGroup = A20441FC2FF97998006BCCCF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A2D0BAB12FFC5C8900729EFE /* XCLocalSwiftPackageReference "BadgerKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A20442062FF97998006BCCCF /* Products */;
 			projectDirPath = "";
@@ -227,6 +316,7 @@
 				A20442042FF97998006BCCCF /* BadgerMe */,
 				A20442132FF9799A006BCCCF /* BadgerMeTests */,
 				A204421D2FF9799A006BCCCF /* BadgerMeUITests */,
+				A2D0BA932FFC5ACE00729EFE /* BadgerMeWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -247,6 +337,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A204421C2FF9799A006BCCCF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A2D0BA922FFC5ACE00729EFE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -277,6 +374,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A2D0BA902FFC5ACE00729EFE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -289,6 +393,11 @@
 			isa = PBXTargetDependency;
 			target = A20442042FF97998006BCCCF /* BadgerMe */;
 			targetProxy = A204421F2FF9799A006BCCCF /* PBXContainerItemProxy */;
+		};
+		A2D0BAA72FFC5AD000729EFE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A2D0BA932FFC5ACE00729EFE /* BadgerMeWidgetExtension */;
+			targetProxy = A2D0BAA62FFC5AD000729EFE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -421,11 +530,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BadgerMe/BadgerMe.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D28SQQ935Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BadgerMe/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -453,11 +564,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BadgerMe/BadgerMe.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D28SQQ935Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BadgerMe/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -564,6 +677,70 @@
 			};
 			name = Release;
 		};
+		A2D0BAAA2FFC5AD000729EFE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BadgerMeWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = D28SQQ935Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BadgerMeWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BadgerMeWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.badgerme.BadgerMe.BadgerMeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A2D0BAAB2FFC5AD000729EFE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BadgerMeWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = D28SQQ935Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BadgerMeWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BadgerMeWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.badgerme.BadgerMe.BadgerMeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -603,7 +780,34 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A2D0BAA92FFC5AD000729EFE /* Build configuration list for PBXNativeTarget "BadgerMeWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A2D0BAAA2FFC5AD000729EFE /* Debug */,
+				A2D0BAAB2FFC5AD000729EFE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A2D0BAB12FFC5C8900729EFE /* XCLocalSwiftPackageReference "BadgerKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = BadgerKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A2D0BAAF2FFC5C5800729EFE /* BadgerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BadgerKit;
+		};
+		A2D0BAB22FFC5C8900729EFE /* BadgerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BadgerKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A20441FD2FF97998006BCCCF /* Project object */;
 }

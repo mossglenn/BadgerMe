@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import BadgerKit
 
 @main
 struct BadgerMeApp: App {
