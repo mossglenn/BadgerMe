@@ -13,7 +13,11 @@
 import UIKit
 import UserNotifications
 import SwiftData
+import AppIntents
 import BadgerKit
+#if canImport(AlarmKit)
+import AlarmKit
+#endif
 
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -28,8 +32,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let container = try! makeModelContainer(groupContainerID: "group.com.badgerme.shared")
         self.container = container
         var registry = AlertChannelRegistry()
-        registry.register(NotificationChannel())          // M3 also registers `alarmkit`
-        self.engine = BadgerEngine(container: container, registry: registry)
+        registry.register(NotificationChannel())
+        #if canImport(AlarmKit)
+        registry.register(AlarmKitChannel())   // hard/breakthrough rungs (M3); app floor is iOS 26.1 (D9)
+        #endif
+        let engine = BadgerEngine(container: container, registry: registry)
+        self.engine = engine
+        // L11/§11: register the shared engine so in-app intents (the alarm's "I did it"
+        // secondary button, MarkBadgerDoneIntent) resolve it via @Dependency.
+        AppDependencyManager.shared.add(dependency: engine)
         super.init()
     }
 
@@ -40,6 +51,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         center.delegate = self
         center.setNotificationCategories([BadgerNotifications.category()])
         Task { _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge]) }
+        #if canImport(AlarmKit)
+        // AlarmKit auth is self-service (SP1) — no Apple approval. Needed before any hard
+        // rung can arm; full permission onboarding with rationale is M7/§17.
+        Task { _ = try? await AlarmManager.shared.requestAuthorization() }
+        #endif
+        engine.startObserving()   // consume AlarmKit's live lifecycle stream (§14 path 1)
         return true
     }
 

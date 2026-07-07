@@ -43,11 +43,15 @@ public struct ScheduledRef: Sendable, Equatable {
 }
 
 /// A live transition a channel observed (§9 `observe`, §14 path 1). The channel does
-/// any snapshot-diffing internally (AlarmKit emits full array snapshots, not deltas —
-/// on-disk §9) and yields these so the engine maps them onto reducer events.
+/// any snapshot-diffing internally (AlarmKit emits full array snapshots, not deltas,
+/// and each snapshot `Alarm` carries no metadata — §9/M3) and yields these so the
+/// engine maps them onto reducer events. Carries `badgerID` because a channel's
+/// observe stream is app-global (one `AlarmManager.alarmUpdates` covers every Badger),
+/// so the event must name which Badger it belongs to; the channel recovers the
+/// (badgerID, rung) identity from an internal map it builds at `schedule` time.
 public enum ChannelEvent: Sendable, Equatable {
-    case levelFired(rung: Int)
-    case dismissed(rung: Int)
+    case levelFired(badgerID: UUID, rung: Int)
+    case dismissed(badgerID: UUID, rung: Int)
 }
 
 /// What a channel can do (§9). Every v1 channel declares

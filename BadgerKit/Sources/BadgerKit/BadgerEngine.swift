@@ -25,6 +25,10 @@ public final class BadgerEngine {
     private let liveActivity: any LiveActivityControlling
     private let now: () -> Date
 
+    /// Tasks consuming each observable channel's `observe()` stream (§14 path 1).
+    /// Retained so they live as long as the engine.
+    private var observationTasks: [Task<Void, Never>] = []
+
     /// Per-Badger repeat batch size for a soft last rung (§10). Bounded by the
     /// 64-pending-per-app budget shared across ~D3 concurrent Badgers; the batch is
     /// replenished on reconcile (M6). SP3: never a single recurring notification.
@@ -103,6 +107,35 @@ public final class BadgerEngine {
         await runReconcile(on: badger)
     }
 
+    // MARK: - Channel observation (§14 path 1)
+
+    /// Start consuming the live transition stream of every observable channel
+    /// (AlarmKit in M3). Each yielded ChannelEvent is mapped onto a reducer event and
+    /// dispatched to its Badger. Call once at composition-root startup, after channels
+    /// are registered. Notifications aren't observable (observe() == nil), so in v1
+    /// this is effectively the AlarmKit path.
+    public func startObserving() {
+        for channel in registry.allChannels {
+            guard let stream = channel.observe() else { continue }
+            let task = Task { [weak self] in
+                for await event in stream { await self?.handleChannelEvent(event) }
+            }
+            observationTasks.append(task)
+        }
+    }
+
+    /// Map a channel's observed transition to a reducer event (observed source): a
+    /// fired alarm advances the level; a bare removal is a NON-resolving dismissal
+    /// (§8/§14 — only an explicit Done resolves). Internal for deterministic testing.
+    func handleChannelEvent(_ event: ChannelEvent) async {
+        switch event {
+        case .levelFired(let badgerID, let rung):
+            await dispatch(.levelFired(level: rung, source: .observed), toBadgerID: badgerID)
+        case .dismissed(let badgerID, let rung):
+            await dispatch(.alarmDismissed(level: rung), toBadgerID: badgerID)
+        }
+    }
+
     // MARK: - Dispatch (reduce -> apply -> execute -> save)
 
     private func dispatch(_ event: Event, toBadgerID id: UUID) async {
@@ -172,9 +205,15 @@ public final class BadgerEngine {
             let fire = fireDate(level: k, startAt: state.startAt, rungs: rungs)
             for action in specs[k].actions {
                 if let ref = await schedule(resolve(action, for: badger), at: fire,
-                                            badgerID: badger.id, slot: .rung(k)),
-                   ref.channelID == "notification" {
-                    badger.armedNotificationIDs[k] = ref.identifier
+                                            badgerID: badger.id, slot: .rung(k)) {
+                    switch ref.channelID {
+                    case "notification":
+                        badger.armedNotificationIDs[k] = ref.identifier
+                    case "alarmkit":
+                        if let uuid = UUID(uuidString: ref.identifier) { badger.armedAlarmIDs[k] = uuid }
+                    default:
+                        break
+                    }
                 }
             }
         }

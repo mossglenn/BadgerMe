@@ -56,6 +56,24 @@ actor FakeChannel: AlertChannel {
     }
 }
 
+/// A fake shaped like the alarmkit channel: returns UUID-string identifiers (so the
+/// engine stores them in armedAlarmIDs) and declares itself observable.
+actor FakeAlarmChannel: AlertChannel {
+    nonisolated let id = "alarmkit"
+    nonisolated let capabilities = ChannelCapabilities(
+        prominences: [.breakthrough], deliversInBackground: true, observableAtFire: true,
+        needsWidget: true, supportsArbitraryRecurrence: false)
+
+    private(set) var scheduled: [ScheduleSlot] = []
+    func schedule(_ action: ChannelAction, at fireDate: Date, recurrence: ChannelRecurrence?,
+                  badgerID: UUID, slot: ScheduleSlot) async throws -> ScheduledRef {
+        scheduled.append(slot)
+        return ScheduledRef(channelID: id, identifier: UUID().uuidString, slot: slot)
+    }
+    func cancel(_ ref: ScheduledRef) async {}
+    func cancelAll(forBadgerID badgerID: UUID) async {}
+}
+
 @Suite("BadgerKit engine + notification channel (Phase 5 §8/§9/§10)")
 @MainActor
 struct EngineTests {
@@ -190,5 +208,55 @@ struct EngineTests {
         let b = try #require(fetchBadger(id, c))
         #expect(b.state == .pending)
         #expect(b.armedNotificationIDs.isEmpty)
+    }
+
+    // MARK: - M3: alarmkit channel wiring
+
+    private var alarmLadder: [RungSpec] {
+        [
+            RungSpec(index: 0, delay: 0,  actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)]),
+            RungSpec(index: 1, delay: 60, actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)]),
+        ]
+    }
+
+    @Test("an alarmkit ref populates armedAlarmIDs, not armedNotificationIDs")
+    func alarmRefStored() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeAlarmChannel()]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        let b = try #require(fetchBadger(id, c))
+        #expect(b.armedAlarmIDs.count == 2)          // base rungs 0 and 1 (repeat tail is not stored)
+        #expect(b.armedNotificationIDs.isEmpty)
+    }
+
+    @Test("an observed alarm fire advances the Badger (levelFired, observed source)")
+    func observedFireAdvances() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeAlarmChannel()]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        await engine.handleChannelEvent(.levelFired(badgerID: id, rung: 1))
+        let b = try #require(fetchBadger(id, c))
+        #expect(b.state == .active)
+        #expect(b.currentLevel == 1)
+        #expect(eventKinds(id, c).contains(.levelFired))
+    }
+
+    @Test("an observed dismissal logs but does NOT resolve (§8 dismiss != done)")
+    func observedDismissDoesNotResolve() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeAlarmChannel()]),
+                                  repeatBatchSize: 2, now: { clock })
+        let single = [RungSpec(index: 0, delay: 0,
+                               actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)])]
+        let id = await engine.create(title: "x", startAt: at(0), rungs: single, maxSnoozeCount: 1)
+        await engine.handleChannelEvent(.dismissed(badgerID: id, rung: 0))
+        let b = try #require(fetchBadger(id, c))
+        #expect(b.state == .pending)
+        #expect(eventKinds(id, c).contains(.alarmDismissed))
     }
 }
