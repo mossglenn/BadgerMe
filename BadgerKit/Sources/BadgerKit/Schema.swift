@@ -23,9 +23,10 @@ enum BadgerMigrationPlan: SchemaMigrationPlan {
 
 /// Builds the ModelContainer against the versioned schema + migration plan.
 /// Tests pass `inMemory: true`; the app passes the App-Group id so the widget and
-/// intents can read Badger state without the app running (§4).
-func makeModelContainer(inMemory: Bool = false,
-                        groupContainerID: String? = nil) throws -> ModelContainer {
+/// intents can read Badger state without the app running (§4). Public: the app's
+/// composition root calls this.
+public func makeModelContainer(inMemory: Bool = false,
+                               groupContainerID: String? = nil) throws -> ModelContainer {
     let schema = Schema(versionedSchema: BadgerSchemaV1.self)
     let configuration: ModelConfiguration
     if inMemory {

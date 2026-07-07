@@ -2,7 +2,8 @@
 //  BadgerMeApp.swift
 //  BadgerMe
 //
-//  Created by Amos Glenn on 7/4/26.
+//  Thin shell (L3): the SwiftUI app is one client of the shared engine/container that
+//  the AppDelegate composition root builds. It holds no escalation logic.
 //
 
 import SwiftUI
@@ -11,23 +12,13 @@ import BadgerKit
 
 @main
 struct BadgerMeApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(engine: appDelegate.engine)
         }
-        .modelContainer(sharedModelContainer)
+        // Same container the engine writes to, so @Query reflects engine saves live.
+        .modelContainer(appDelegate.container)
     }
 }

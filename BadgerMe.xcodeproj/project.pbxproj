@@ -70,11 +70,21 @@
 			);
 			target = A2D0BA932FFC5ACE00729EFE /* BadgerMeWidgetExtension */;
 		};
+		A2D0BABC2FFC9F5F00729EFE /* Exceptions for "BadgerMe" folder in "BadgerMe" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A20442042FF97998006BCCCF /* BadgerMe */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A20442072FF97998006BCCCF /* BadgerMe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A2D0BABC2FFC9F5F00729EFE /* Exceptions for "BadgerMe" folder in "BadgerMe" target */,
+			);
 			path = BadgerMe;
 			sourceTree = "<group>";
 		};
