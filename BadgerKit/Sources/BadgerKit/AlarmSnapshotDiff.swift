@@ -32,7 +32,9 @@ func diffAlarmSnapshot(
     }
 
     for (alarmID, owner) in owners where !presentIDs.contains(alarmID) {
-        events.append(.dismissed(badgerID: owner.badgerID, rung: rungIndex(owner.slot)))
+        if let event = dismissedEvent(badgerID: owner.badgerID, slot: owner.slot) {
+            events.append(event)
+        }
         nextLastAlerting[alarmID] = nil
         removedOwners.append(alarmID)
     }
@@ -47,14 +49,17 @@ private func firedEvent(badgerID: UUID, slot: ScheduleSlot) -> ChannelEvent? {
     case .repeatTail(let rung, let n):
         return .repeatFired(badgerID: badgerID, rung: rung, n: n)
     case .wake:
-        return .levelFired(badgerID: badgerID, rung: -1)
+        // A wake alarm is a snooze-expiry nudge, not a rung fire; SnoozeExpired is
+        // reconcile-driven (§14). Emit no channel event. Unreachable today (armWake is
+        // notification-only), but guards the §8-open path of an AlarmKit-backed wake.
+        return nil
     }
 }
 
-private func rungIndex(_ slot: ScheduleSlot) -> Int {
+private func dismissedEvent(badgerID: UUID, slot: ScheduleSlot) -> ChannelEvent? {
     switch slot {
-    case .rung(let k):             return k
-    case .repeatTail(let rung, _): return rung
-    case .wake:                    return -1
+    case .rung(let k):             return .dismissed(badgerID: badgerID, rung: k)
+    case .repeatTail(let rung, _): return .dismissed(badgerID: badgerID, rung: rung)
+    case .wake:                    return nil
     }
 }

@@ -62,4 +62,20 @@ struct AlarmSnapshotDiffTests {
         )
         #expect(diff.events == [.repeatFired(badgerID: badgerID, rung: 3, n: 4)])
     }
+
+    @Test("a wake alarm produces no channel event, alerting or disappearing")
+    func wakeEmitsNothing() {
+        let id = UUID()
+        let badgerID = UUID()
+        let owners = [id: (badgerID: badgerID, slot: ScheduleSlot.wake)]
+        let fired = diffAlarmSnapshot(
+            entries: [AlarmSnapshotEntry(id: id, isAlerting: true)],
+            owners: owners,
+            lastAlerting: [:]
+        )
+        #expect(fired.events.isEmpty)
+        let gone = diffAlarmSnapshot(entries: [], owners: owners, lastAlerting: [id: false])
+        #expect(gone.events.isEmpty)
+        #expect(gone.removedOwners == [id])
+    }
 }
