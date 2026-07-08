@@ -80,6 +80,14 @@ struct ProjectionTests {
         #expect(b.state == .stopped)
     }
 
+    @Test("apply resets currentLevel when returning to pending")
+    func applyPendingResetsLevel() {
+        let b = badger(state: .active, level: 3)
+        apply(MachineState(status: .pending, startAt: T0, snoozeCount: 0), to: b)
+        #expect(b.state == .pending)
+        #expect(b.currentLevel == 0)
+    }
+
     @Test("Badger -> MachineState -> apply round-trips the non-terminal states")
     func roundTrip() {
         let cases: [Badger] = [

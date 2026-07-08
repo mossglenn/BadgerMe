@@ -96,10 +96,14 @@ public struct NotificationChannel: AlertChannel {
 
     public func cancelAll(forBadgerID badgerID: UUID) async {
         let prefix = BadgerNotifications.identifierPrefix(badgerID: badgerID)
-        let pending = await center.pendingNotificationRequests()
-        let ids = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
-        center.removeDeliveredNotifications(withIdentifiers: ids)
+        let pendingIDs = await center.pendingNotificationRequests()
+            .map(\.identifier)
+            .filter { $0.hasPrefix(prefix) }
+        let deliveredIDs = await center.deliveredNotifications()
+            .map(\.request.identifier)
+            .filter { $0.hasPrefix(prefix) }
+        center.removePendingNotificationRequests(withIdentifiers: pendingIDs)
+        center.removeDeliveredNotifications(withIdentifiers: deliveredIDs)
     }
 
     // MARK: - Mapping

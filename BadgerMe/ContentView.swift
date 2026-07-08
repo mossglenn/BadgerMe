@@ -17,11 +17,17 @@ struct ContentView: View {
         NavigationStack {
             List {
                 #if DEBUG
-                Section("Dev harness (M2)") {
+                Section("Dev harness (M3)") {
                     Button("New test Badger — 10s / 25s / 45s notification ladder") {
                         Task {
                             await engine.create(title: "Test Badger", startAt: .now,
-                                                rungs: Self.devLadder, maxSnoozeCount: 1)
+                                                rungs: Self.devNotificationLadder, maxSnoozeCount: 1)
+                        }
+                    }
+                    Button("New test Badger — 10s / 25s / 45s breakthrough ladder") {
+                        Task {
+                            await engine.create(title: "AlarmKit Test Badger", startAt: .now,
+                                                rungs: Self.devBreakthroughLadder, maxSnoozeCount: 1)
                         }
                     }
                     Button("Reconcile all (catch up)") { Task { await engine.reconcileAll() } }
@@ -41,11 +47,19 @@ struct ContentView: View {
     }
 
     #if DEBUG
-    static var devLadder: [RungSpec] {
+    static var devNotificationLadder: [RungSpec] {
         [
             RungSpec(index: 0, delay: 10, actions: [ChannelAction(channelID: "notification", prominence: .active)]),
             RungSpec(index: 1, delay: 25, actions: [ChannelAction(channelID: "notification", prominence: .timeSensitive)]),
             RungSpec(index: 2, delay: 45, actions: [ChannelAction(channelID: "notification", prominence: .timeSensitive)]),
+        ]
+    }
+
+    static var devBreakthroughLadder: [RungSpec] {
+        [
+            RungSpec(index: 0, delay: 10, actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)]),
+            RungSpec(index: 1, delay: 25, actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)]),
+            RungSpec(index: 2, delay: 45, actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)]),
         ]
     }
     #endif
