@@ -51,6 +51,7 @@ public struct ScheduledRef: Sendable, Equatable {
 /// (badgerID, rung) identity from an internal map it builds at `schedule` time.
 public enum ChannelEvent: Sendable, Equatable {
     case levelFired(badgerID: UUID, rung: Int)
+    case repeatFired(badgerID: UUID, rung: Int, n: Int)
     case dismissed(badgerID: UUID, rung: Int)
 }
 
