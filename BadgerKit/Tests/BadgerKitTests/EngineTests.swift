@@ -245,6 +245,19 @@ struct EngineTests {
         #expect(eventKinds(id, c).contains(.levelFired))
     }
 
+    @Test("an observed repeat-tail fire logs lastRungRepeated")
+    func observedRepeatLogsRepeat() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeAlarmChannel()]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        await engine.handleChannelEvent(.levelFired(badgerID: id, rung: 1))
+        await engine.handleChannelEvent(.repeatFired(badgerID: id, rung: 1, n: 1))
+        let kinds = eventKinds(id, c)
+        #expect(kinds.contains(.lastRungRepeated))
+    }
+
     @Test("an observed dismissal logs but does NOT resolve (§8 dismiss != done)")
     func observedDismissDoesNotResolve() async throws {
         let clock = at(0)

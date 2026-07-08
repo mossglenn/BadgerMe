@@ -68,6 +68,9 @@ public final class BadgerEngine {
         await dispatch(.userSnoozed(duration: duration), toBadgerID: id)
     }
     public func stop(_ id: UUID) async { await dispatch(.userStopped, toBadgerID: id) }
+    public func markAlarmDismissed(_ id: UUID, rung: Int) async {
+        await dispatch(.alarmDismissed(level: rung), toBadgerID: id)
+    }
 
     /// Hard-delete the Badger and its event log (D5), after tearing down its alerts.
     public func delete(_ id: UUID) async {
@@ -131,8 +134,10 @@ public final class BadgerEngine {
         switch event {
         case .levelFired(let badgerID, let rung):
             await dispatch(.levelFired(level: rung, source: .observed), toBadgerID: badgerID)
+        case .repeatFired(let badgerID, _, let n):
+            await dispatch(.lastRungRepeated(index: n, source: .observed), toBadgerID: badgerID)
         case .dismissed(let badgerID, let rung):
-            await dispatch(.alarmDismissed(level: rung), toBadgerID: badgerID)
+            await markAlarmDismissed(badgerID, rung: rung)
         }
     }
 

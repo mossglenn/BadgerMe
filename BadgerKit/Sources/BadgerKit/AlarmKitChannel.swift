@@ -9,14 +9,13 @@
 //  never imports AlarmKit itself.
 //
 //  SDK facts (verified against the iOS 26.5 .swiftinterface, 2026-07-07):
-//   - AlarmConfiguration.secondaryIntent is `(any LiveActivityIntent)?`, so the resolve
-//     button is a LiveActivityIntent (MarkBadgerDoneIntent), run in-app.
+//   - AlarmConfiguration.stopIntent/secondaryIntent are `(any LiveActivityIntent)?`, so
+//     Stop and resolve buttons are handled by in-app intents.
 //     secondaryButtonBehavior: .custom routes taps to it. The system Stop is a slider
-//     (the 26.1 `stopButton` init is deprecated) — a stop is a bare removal, surfaced by
-//     observe() as .dismissed (non-resolving, §8).
+//     (the 26.1 `stopButton` init is deprecated).
 //   - A snapshot `Alarm` carries only id/schedule/countdownDuration/state — NO metadata.
 //     So observe()/cancelAll can't read the owning Badger off the snapshot; the channel
-//     keeps its own [alarmID: (badgerID, rung)] map, built at schedule() time.
+//     keeps its own [alarmID: (badgerID, slot)] map, built at schedule() time.
 //   - Alarm.State is {scheduled, countdown, paused, alerting}; no terminal case, so a
 //     stopped/resolved alarm just leaves the `alarms` array (removal = dismissal).
 //   - Rungs fire at absolute instants, so we schedule Alarm.Schedule.fixed(Date) rather
@@ -57,11 +56,11 @@ public actor AlarmKitChannel: AlertChannel {
         needsWidget: true,
         supportsArbitraryRecurrence: false)   // SP3: AlarmKit recurrence is weekly wall-clock only
 
-    /// alarmID → (badgerID, rung), built at schedule() so observe()/cancelAll recover the
+    /// alarmID → (badgerID, slot), built at schedule() so observe()/cancelAll recover the
     /// identity a snapshot Alarm doesn't carry.
-    private var owners: [UUID: (badgerID: UUID, rung: Int)] = [:]
-    /// Last-seen per-alarm state, to diff each app-global snapshot into transitions.
-    private var lastStates: [UUID: Alarm.State] = [:]
+    private var owners: [UUID: (badgerID: UUID, slot: ScheduleSlot)] = [:]
+    /// Last-seen per-alarm alerting state, used to diff app-global snapshots.
+    private var lastAlerting: [UUID: Bool] = [:]
 
     public init() {}
 
@@ -83,11 +82,12 @@ public actor AlarmKitChannel: AlertChannel {
         let config = AlarmManager.AlarmConfiguration(
             schedule: .fixed(fireDate),
             attributes: attributes,
+            stopIntent: MarkBadgerDismissedIntent(badgerID: badgerID.uuidString, rung: rungIndex(of: slot)),
             secondaryIntent: MarkBadgerDoneIntent(badgerID: badgerID.uuidString),
             sound: sound(for: action.soundRef))
 
         _ = try await AlarmManager.shared.schedule(id: alarmID, configuration: config)
-        owners[alarmID] = (badgerID, rung)
+        owners[alarmID] = (badgerID, slot)
         return ScheduledRef(channelID: id, identifier: alarmID.uuidString, slot: slot)
     }
 
@@ -95,7 +95,7 @@ public actor AlarmKitChannel: AlertChannel {
         guard let alarmID = UUID(uuidString: ref.identifier) else { return }
         try? AlarmManager.shared.cancel(id: alarmID)
         owners[alarmID] = nil
-        lastStates[alarmID] = nil
+        lastAlerting[alarmID] = nil
     }
 
     public func cancelAll(forBadgerID badgerID: UUID) async {
@@ -103,7 +103,7 @@ public actor AlarmKitChannel: AlertChannel {
         for alarmID in mine {
             try? AlarmManager.shared.cancel(id: alarmID)
             owners[alarmID] = nil
-            lastStates[alarmID] = nil
+            lastAlerting[alarmID] = nil
         }
     }
 
@@ -125,24 +125,14 @@ public actor AlarmKitChannel: AlertChannel {
     /// owned alarms. Entering `.alerting` => the rung fired; disappearing from the
     /// snapshot => a bare removal (dismissal, non-resolving, §8).
     private func diff(_ snapshot: [Alarm]) -> [ChannelEvent] {
-        var events: [ChannelEvent] = []
-        let present = Set(snapshot.map(\.id))
-
-        for alarm in snapshot {
-            guard let owner = owners[alarm.id] else { continue }
-            let prior = lastStates[alarm.id]
-            if alarm.state == .alerting, prior != .alerting {
-                events.append(.levelFired(badgerID: owner.badgerID, rung: owner.rung))
-            }
-            lastStates[alarm.id] = alarm.state
+        let entries = snapshot.map { AlarmSnapshotEntry(id: $0.id, isAlerting: $0.state == .alerting) }
+        let diff = diffAlarmSnapshot(entries: entries, owners: owners, lastAlerting: lastAlerting)
+        lastAlerting = diff.newLastAlerting
+        for removedID in diff.removedOwners {
+            owners[removedID] = nil
+            lastAlerting[removedID] = nil
         }
-
-        for (alarmID, owner) in owners where !present.contains(alarmID) {
-            events.append(.dismissed(badgerID: owner.badgerID, rung: owner.rung))
-            owners[alarmID] = nil
-            lastStates[alarmID] = nil
-        }
-        return events
+        return diff.events
     }
 
     // MARK: - Mapping

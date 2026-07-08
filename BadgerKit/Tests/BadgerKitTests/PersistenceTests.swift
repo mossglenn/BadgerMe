@@ -2,8 +2,8 @@
 //  PersistenceTests.swift
 //  BadgerKitTests — §6 model + §18 schema/round-trip acceptance.
 //
-//  Opens an in-memory container against BadgerSchemaV1 (exercising the migration
-//  plan's no-op path) and asserts a Badger + its frozen ladder + events round-trip.
+//  Opens an in-memory container against BadgerSchemaV1 (with the empty migration
+//  plan attached) and asserts a Badger + its frozen ladder + events round-trip.
 //
 
 import Testing
@@ -19,7 +19,7 @@ struct PersistenceTests {
         try makeModelContainer(inMemory: true)
     }
 
-    @Test("Container opens against the versioned schema + no-op migration plan")
+    @Test("Container opens against the versioned schema with an empty migration plan")
     func containerOpens() throws {
         _ = try container()
     }

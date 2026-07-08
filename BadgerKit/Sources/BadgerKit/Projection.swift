@@ -38,6 +38,7 @@ func apply(_ state: MachineState, to badger: Badger) {
     switch state.status {
     case .pending:
         badger.state = .pending
+        badger.currentLevel = 0
         badger.snoozeUntil = nil
     case .active(let level):
         badger.state = .active
