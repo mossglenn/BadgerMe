@@ -94,6 +94,11 @@ public struct NotificationChannel: AlertChannel {
         center.removeDeliveredNotifications(withIdentifiers: [ref.identifier])
     }
 
+    public func cancel(identifiers: [String]) async {
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+        center.removeDeliveredNotifications(withIdentifiers: identifiers)
+    }
+
     public func cancelAll(forBadgerID badgerID: UUID) async {
         let prefix = BadgerNotifications.identifierPrefix(badgerID: badgerID)
         let pendingIDs = await center.pendingNotificationRequests()

@@ -107,6 +107,18 @@ public actor AlarmKitChannel: AlertChannel {
         }
     }
 
+    /// Cancel by explicit alarm ids (from the persisted `armedAlarms`). Works with an
+    /// EMPTY owners map — after a cold kill in a fresh process — which is the whole point
+    /// (M3 cold-kill fix). `AlarmManager.cancel` is best-effort, so a gone id is harmless.
+    public func cancel(identifiers: [String]) async {
+        for identifier in identifiers {
+            guard let alarmID = UUID(uuidString: identifier) else { continue }
+            try? AlarmManager.shared.cancel(id: alarmID)
+            owners[alarmID] = nil
+            lastAlerting[alarmID] = nil
+        }
+    }
+
     public nonisolated func observe() -> AsyncStream<ChannelEvent>? {
         AsyncStream { continuation in
             let task = Task {

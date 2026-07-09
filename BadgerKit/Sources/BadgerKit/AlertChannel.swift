@@ -103,9 +103,21 @@ public protocol AlertChannel: Sendable {
     /// Cancel everything this channel scheduled for a Badger (teardown / re-arm).
     func cancelAll(forBadgerID badgerID: UUID) async
 
+    /// Cancel specific items by their platform identifiers. Unlike `cancelAll(forBadgerID:)`,
+    /// this needs no in-memory/live state, so it works after a cold kill from the persisted
+    /// `armedAlarms` (M3 cold-kill fix). Default: no-op (channels that tear down by namespace
+    /// — notifications — rely on `cancelAll(forBadgerID:)` instead).
+    func cancel(identifiers: [String]) async
+
     /// Live transitions while the app runs, or nil if the channel isn't observable at
     /// fire (notifications; §9). AlarmKit returns a real stream in M3.
     func observe() -> AsyncStream<ChannelEvent>?
+}
+
+public extension AlertChannel {
+    /// Default: no-op. Overridden by channels that support id-targeted cancellation
+    /// (AlarmKit) or namespace-based removal (notifications).
+    func cancel(identifiers: [String]) async {}
 }
 
 public extension AlertChannel {

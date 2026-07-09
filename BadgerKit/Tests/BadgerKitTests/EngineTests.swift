@@ -65,6 +65,7 @@ actor FakeAlarmChannel: AlertChannel {
         needsWidget: true, supportsArbitraryRecurrence: false)
 
     private(set) var scheduled: [ScheduleSlot] = []
+    private(set) var cancelledIdentifiers: [String] = []
     func schedule(_ action: ChannelAction, at fireDate: Date, recurrence: ChannelRecurrence?,
                   badgerID: UUID, slot: ScheduleSlot) async throws -> ScheduledRef {
         scheduled.append(slot)
@@ -72,6 +73,8 @@ actor FakeAlarmChannel: AlertChannel {
     }
     func cancel(_ ref: ScheduledRef) async {}
     func cancelAll(forBadgerID badgerID: UUID) async {}
+    // owners-free: records the ids the engine asks us to cancel (the cold-kill path).
+    func cancel(identifiers: [String]) async { cancelledIdentifiers.append(contentsOf: identifiers) }
 }
 
 @Suite("BadgerKit engine + notification channel (Phase 5 §8/§9/§10)")
@@ -234,6 +237,25 @@ struct EngineTests {
             .repeatTail(rung: 1, n: 1), .repeatTail(rung: 1, n: 2),
         ])
         #expect(b.armedAlarms.count == 4)
+    }
+
+    @Test("cancel routes persisted armedAlarms ids to the channel (cold-kill-safe), then clears")
+    func cancelUsesPersistedIDs() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeAlarmChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        let armed = Set(try #require(fetchBadger(id, c)).armedAlarms.map(\.id))
+        #expect(armed.count == 4)                    // rungs 0,1 + 2 repeat-tail
+
+        await engine.markDone(id)
+
+        // FakeAlarmChannel.cancelAll is a no-op (the cold-kill case: empty owners map),
+        // yet every persisted id was cancelled via cancel(identifiers:).
+        #expect(Set(await fake.cancelledIdentifiers) == armed)
+        #expect(try #require(fetchBadger(id, c)).armedAlarms.isEmpty)   // cleared after teardown
     }
 
     @Test("an observed alarm fire advances the Badger (levelFired, observed source)")

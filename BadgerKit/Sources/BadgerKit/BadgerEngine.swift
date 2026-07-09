@@ -75,7 +75,7 @@ public final class BadgerEngine {
     /// Hard-delete the Badger and its event log (D5), after tearing down its alerts.
     public func delete(_ id: UUID) async {
         guard let badger = fetch(id) else { return }
-        await cancelAllChannels(for: id)
+        await cancelPending(for: badger)
         await liveActivity.end(badgerID: id)
         let events = (try? context.fetch(FetchDescriptor<EventRecord>(
             predicate: #Predicate { $0.badgerID == id }))) ?? []
@@ -180,8 +180,8 @@ public final class BadgerEngine {
             case .armSchedule(let fromLevel):
                 await armSchedule(from: fromLevel, badger: badger, state: state, ctx: ctx)
             case .cancelAllPending:
-                await cancelAllChannels(for: badger.id)
-                badger.armedAlarms = []
+                await cancelPending(for: badger)   // reads armedAlarms; cancels by id + namespace
+                badger.armedAlarms = []            // clear only after teardown returns
             case .armWake(let date):
                 await armWake(at: date, badger: badger)
             case .startLiveActivity(let phase, let nextFire):
@@ -258,8 +258,15 @@ public final class BadgerEngine {
         }
     }
 
-    private func cancelAllChannels(for id: UUID) async {
-        for channel in registry.allChannels { await channel.cancelAll(forBadgerID: id) }
+    /// Tear down a Badger's alerts durably: cancel persisted AlarmKit alarms by id
+    /// (cold-kill-safe — no owners-map dependency) and prefix-scan notifications by
+    /// namespace. Callers clear `badger.armedAlarms` only after this returns.
+    private func cancelPending(for badger: Badger) async {
+        let armedIDs = badger.armedAlarms.map(\.id)
+        for channel in registry.allChannels {
+            await channel.cancel(identifiers: armedIDs)       // durable id teardown (AlarmKit)
+            await channel.cancelAll(forBadgerID: badger.id)   // namespace teardown (notifications)
+        }
     }
 
     // MARK: - Helpers
