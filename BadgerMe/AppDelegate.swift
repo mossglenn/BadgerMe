@@ -56,7 +56,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // rung can arm; full permission onboarding with rationale is M7/§17.
         Task { _ = try? await AlarmManager.shared.requestAuthorization() }
         #endif
-        engine.startObserving()   // consume AlarmKit's live lifecycle stream (§14 path 1)
+        // Rehydrate the AlarmKit owner map from persisted armedAlarms BEFORE observing, so a
+        // prior-process alarm firing is attributed after a relaunch (M3 cold-kill fix, ckpt 4).
+        Task { @MainActor in
+            await engine.rehydrateArmedAlarms()
+            engine.startObserving()   // consume AlarmKit's live lifecycle stream (§14 path 1)
+        }
         return true
     }
 

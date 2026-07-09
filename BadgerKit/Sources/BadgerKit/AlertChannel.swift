@@ -109,6 +109,11 @@ public protocol AlertChannel: Sendable {
     /// — notifications — rely on `cancelAll(forBadgerID:)` instead).
     func cancel(identifiers: [String]) async
 
+    /// Repopulate any in-memory owner/identity map from persisted armed refs, so
+    /// `observe()` can attribute firings of items armed in a prior process after a
+    /// relaunch (M3 cold-kill fix). Default: no-op (channels with no live owner map).
+    func adopt(badgerID: UUID, refs: [ArmedRef]) async
+
     /// Live transitions while the app runs, or nil if the channel isn't observable at
     /// fire (notifications; §9). AlarmKit returns a real stream in M3.
     func observe() -> AsyncStream<ChannelEvent>?
@@ -118,6 +123,9 @@ public extension AlertChannel {
     /// Default: no-op. Overridden by channels that support id-targeted cancellation
     /// (AlarmKit) or namespace-based removal (notifications).
     func cancel(identifiers: [String]) async {}
+
+    /// Default: no-op. Overridden by channels with a live owner map (AlarmKit).
+    func adopt(badgerID: UUID, refs: [ArmedRef]) async {}
 }
 
 public extension AlertChannel {

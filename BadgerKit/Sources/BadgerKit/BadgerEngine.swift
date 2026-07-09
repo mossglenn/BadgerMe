@@ -117,6 +117,19 @@ public final class BadgerEngine {
     /// dispatched to its Badger. Call once at composition-root startup, after channels
     /// are registered. Notifications aren't observable (observe() == nil), so in v1
     /// this is effectively the AlarmKit path.
+    /// Rebuild each channel's in-memory owner map from persisted `armedAlarms` for every
+    /// non-terminal Badger, so `observe()` can attribute firings of alarms armed in a prior
+    /// process after a relaunch (M3 cold-kill fix). Call at startup BEFORE `startObserving()`.
+    /// Notification channels no-op (they own no live map).
+    public func rehydrateArmedAlarms() async {
+        let all = (try? context.fetch(FetchDescriptor<Badger>())) ?? []
+        for badger in all where !isTerminal(badger.state) && !badger.armedAlarms.isEmpty {
+            for channel in registry.allChannels {
+                await channel.adopt(badgerID: badger.id, refs: badger.armedAlarms)
+            }
+        }
+    }
+
     public func startObserving() {
         for channel in registry.allChannels {
             guard let stream = channel.observe() else { continue }

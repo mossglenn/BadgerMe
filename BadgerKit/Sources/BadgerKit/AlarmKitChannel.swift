@@ -119,6 +119,17 @@ public actor AlarmKitChannel: AlertChannel {
         }
     }
 
+    /// Rebuild the owner map from persisted armed refs after a relaunch, so a firing of an
+    /// alarm armed in a prior process is attributed to its Badger by `observe()`.
+    /// `lastAlerting` is left unseeded (defaults to not-alerting) so the first snapshot
+    /// showing the alarm alerting emits its fire.
+    public func adopt(badgerID: UUID, refs: [ArmedRef]) async {
+        for ref in refs {
+            guard let alarmID = UUID(uuidString: ref.id) else { continue }
+            owners[alarmID] = (badgerID, ref.slot)
+        }
+    }
+
     public nonisolated func observe() -> AsyncStream<ChannelEvent>? {
         AsyncStream { continuation in
             let task = Task {

@@ -75,6 +75,8 @@ actor FakeAlarmChannel: AlertChannel {
     func cancelAll(forBadgerID badgerID: UUID) async {}
     // owners-free: records the ids the engine asks us to cancel (the cold-kill path).
     func cancel(identifiers: [String]) async { cancelledIdentifiers.append(contentsOf: identifiers) }
+    private(set) var adopted: [(badgerID: UUID, refs: [ArmedRef])] = []
+    func adopt(badgerID: UUID, refs: [ArmedRef]) async { adopted.append((badgerID, refs)) }
 }
 
 @Suite("BadgerKit engine + notification channel (Phase 5 §8/§9/§10)")
@@ -256,6 +258,29 @@ struct EngineTests {
         // yet every persisted id was cancelled via cancel(identifiers:).
         #expect(Set(await fake.cancelledIdentifiers) == armed)
         #expect(try #require(fetchBadger(id, c)).armedAlarms.isEmpty)   // cleared after teardown
+    }
+
+    @Test("rehydrate re-adopts non-terminal Badgers' armed alarms; skips terminal")
+    func rehydrateAdopts() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeAlarmChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        let armed = try #require(fetchBadger(id, c)).armedAlarms
+
+        await engine.rehydrateArmedAlarms()
+
+        let adopted = await fake.adopted
+        #expect(adopted.count == 1)
+        #expect(adopted.first?.badgerID == id)
+        #expect(Set((adopted.first?.refs ?? []).map(\.id)) == Set(armed.map(\.id)))
+
+        // A resolved Badger (armedAlarms cleared + terminal) is not re-adopted.
+        await engine.markDone(id)
+        await engine.rehydrateArmedAlarms()
+        #expect(await fake.adopted.count == 1)
     }
 
     @Test("an observed alarm fire advances the Badger (levelFired, observed source)")
