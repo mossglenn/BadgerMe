@@ -39,8 +39,11 @@ public final class Badger {
     public var tint: String
     public var iconName: String?
 
-    public var armedAlarmIDs: [Int: UUID]
-    public var armedNotificationIDs: [Int: String]
+    /// Persisted, addressable refs to this Badger's armed AlarmKit alarms (rungs +
+    /// repeat batch): the teardown source of truth. Survives a cold kill so Done/Delete
+    /// can cancel prior-process alarms (M3 cold-kill fix). Notification rungs are NOT
+    /// tracked here — `NotificationChannel.cancelAll` prefix-scans the system by namespace.
+    public var armedAlarms: [ArmedRef]
     public var liveActivityID: String?
     public var focusTags: [String]
 
@@ -60,8 +63,8 @@ public final class Badger {
                 source: TriggerSource = .manual, state: StoredBadgerState = .pending,
                 currentLevel: Int = 0, snoozeCount: Int = 0, snoozeUntil: Date? = nil,
                 resolvedAt: Date? = nil, maxSnoozeCount: Int, tint: String = "accent",
-                iconName: String? = nil, armedAlarmIDs: [Int: UUID] = [:],
-                armedNotificationIDs: [Int: String] = [:], liveActivityID: String? = nil,
+                iconName: String? = nil, armedAlarms: [ArmedRef] = [],
+                liveActivityID: String? = nil,
                 focusTags: [String] = [], ladder: BoundLadder? = nil) {
         self.id = id
         self.title = title
@@ -77,8 +80,7 @@ public final class Badger {
         self.maxSnoozeCount = maxSnoozeCount
         self.tint = tint
         self.iconName = iconName
-        self.armedAlarmIDs = armedAlarmIDs
-        self.armedNotificationIDs = armedNotificationIDs
+        self.armedAlarms = armedAlarms
         self.liveActivityID = liveActivityID
         self.focusTags = focusTags
         self.ladder = ladder

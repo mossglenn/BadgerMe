@@ -181,8 +181,7 @@ public final class BadgerEngine {
                 await armSchedule(from: fromLevel, badger: badger, state: state, ctx: ctx)
             case .cancelAllPending:
                 await cancelAllChannels(for: badger.id)
-                badger.armedNotificationIDs = [:]
-                badger.armedAlarmIDs = [:]
+                badger.armedAlarms = []
             case .armWake(let date):
                 await armWake(at: date, badger: badger)
             case .startLiveActivity(let phase, let nextFire):
@@ -211,14 +210,11 @@ public final class BadgerEngine {
             for action in specs[k].actions {
                 if let ref = await schedule(resolve(action, for: badger), at: fire,
                                             badgerID: badger.id, slot: .rung(k)) {
-                    switch ref.channelID {
-                    case "notification":
-                        badger.armedNotificationIDs[k] = ref.identifier
-                    case "alarmkit":
-                        if let uuid = UUID(uuidString: ref.identifier) { badger.armedAlarmIDs[k] = uuid }
-                    default:
-                        break
+                    if ref.channelID == "alarmkit" {
+                        badger.armedAlarms.append(ArmedRef(id: ref.identifier, slot: .rung(k)))
                     }
+                    // Notification rungs aren't persisted; NotificationChannel.cancelAll
+                    // prefix-scans the system by the badger-{id}- namespace (survives cold kill).
                 }
             }
         }
@@ -229,8 +225,11 @@ public final class BadgerEngine {
             for n in 1...repeatBatchSize {
                 let fire = firstLastFire.addingTimeInterval(Double(n) * interval)
                 for action in specs[last].actions {
-                    _ = await schedule(resolve(action, for: badger), at: fire,
-                                       badgerID: badger.id, slot: .repeatTail(rung: last, n: n))
+                    if let ref = await schedule(resolve(action, for: badger), at: fire,
+                                                badgerID: badger.id, slot: .repeatTail(rung: last, n: n)),
+                       ref.channelID == "alarmkit" {
+                        badger.armedAlarms.append(ArmedRef(id: ref.identifier, slot: .repeatTail(rung: last, n: n)))
+                    }
                 }
             }
         }

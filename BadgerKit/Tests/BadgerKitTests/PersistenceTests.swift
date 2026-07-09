@@ -61,7 +61,7 @@ struct PersistenceTests {
         let b = Badger(title: "x", startAt: .now, source: .appleReminders,
                        state: .snoozed, maxSnoozeCount: 2)
         b.snoozeUntil = Date(timeIntervalSinceReferenceDate: 500)
-        b.armedAlarmIDs = [2: UUID()]
+        b.armedAlarms = [ArmedRef(id: UUID().uuidString, slot: .rung(2))]
         ctx.insert(b)
         try ctx.save()
 
@@ -70,7 +70,7 @@ struct PersistenceTests {
         #expect(got.stateRaw == "snoozed")
         #expect(got.source == .appleReminders)
         #expect(got.snoozeUntil == Date(timeIntervalSinceReferenceDate: 500))
-        #expect(got.armedAlarmIDs.keys.contains(2))
+        #expect(got.armedAlarms.contains { $0.slot == .rung(2) })
     }
 
     @Test("Event log rows persist and query by badgerID")

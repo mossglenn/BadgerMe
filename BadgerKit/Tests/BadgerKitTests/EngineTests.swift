@@ -57,7 +57,7 @@ actor FakeChannel: AlertChannel {
 }
 
 /// A fake shaped like the alarmkit channel: returns UUID-string identifiers (so the
-/// engine stores them in armedAlarmIDs) and declares itself observable.
+/// engine stores them in armedAlarms) and declares itself observable.
 actor FakeAlarmChannel: AlertChannel {
     nonisolated let id = "alarmkit"
     nonisolated let capabilities = ChannelCapabilities(
@@ -117,7 +117,7 @@ struct EngineTests {
 
         let b = try #require(fetchBadger(id, c))
         #expect(b.state == .pending)
-        #expect(b.armedNotificationIDs.count == 3)
+        #expect(b.armedAlarms.isEmpty)               // notification rungs aren't persisted (prefix-scan teardown)
         #expect(eventKinds(id, c) == [.created, .armed])
     }
 
@@ -207,7 +207,7 @@ struct EngineTests {
 
         let b = try #require(fetchBadger(id, c))
         #expect(b.state == .pending)
-        #expect(b.armedNotificationIDs.isEmpty)
+        #expect(b.armedAlarms.isEmpty)               // alarmkit unregistered → nothing armed
     }
 
     // MARK: - M3: alarmkit channel wiring
@@ -219,7 +219,7 @@ struct EngineTests {
         ]
     }
 
-    @Test("an alarmkit ref populates armedAlarmIDs, not armedNotificationIDs")
+    @Test("alarmkit refs populate armedAlarms including the repeat batch")
     func alarmRefStored() async throws {
         let clock = at(0)
         let c = try makeModelContainer(inMemory: true)
@@ -227,8 +227,13 @@ struct EngineTests {
                                   repeatBatchSize: 2, now: { clock })
         let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
         let b = try #require(fetchBadger(id, c))
-        #expect(b.armedAlarmIDs.count == 2)          // base rungs 0 and 1 (repeat tail is not stored)
-        #expect(b.armedNotificationIDs.isEmpty)
+        // base rungs 0 and 1 + the 2-member repeat batch on the last rung (n=1,2). The
+        // repeat tail is now persisted — the cold-kill bug was that it was discarded.
+        #expect(Set(b.armedAlarms.map(\.slot)) == [
+            .rung(0), .rung(1),
+            .repeatTail(rung: 1, n: 1), .repeatTail(rung: 1, n: 2),
+        ])
+        #expect(b.armedAlarms.count == 4)
     }
 
     @Test("an observed alarm fire advances the Badger (levelFired, observed source)")
