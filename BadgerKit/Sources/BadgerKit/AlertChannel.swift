@@ -22,10 +22,22 @@ public enum ChannelRecurrence: Sendable, Equatable {
 
 /// Where a scheduled item sits in a Badger's ladder. A shared vocabulary so the
 /// engine and every channel agree on identity without a channel-specific scheme.
-public enum ScheduleSlot: Sendable, Equatable, Hashable {
+public enum ScheduleSlot: Sendable, Equatable, Hashable, Codable {
     case rung(Int)                          // a base rung's fire
     case repeatTail(rung: Int, n: Int)      // the nth repeat of the last rung (§8/§10)
     case wake                               // a snooze-expiry nudge (armWake)
+}
+
+/// A persisted, addressable reference to one armed alert: its platform identifier plus
+/// the `ScheduleSlot` it fills. Stored on `Badger`, so it survives process termination
+/// and teardown can cancel prior-process alarms after a cold kill (M3 cold-kill fix).
+public struct ArmedRef: Codable, Equatable, Sendable {
+    public let id: String          // AlarmKit alarm UUID (as string)
+    public let slot: ScheduleSlot  // typed identity
+    public init(id: String, slot: ScheduleSlot) {
+        self.id = id
+        self.slot = slot
+    }
 }
 
 /// A cancellable handle to something a channel scheduled (§9). Concrete (not an
