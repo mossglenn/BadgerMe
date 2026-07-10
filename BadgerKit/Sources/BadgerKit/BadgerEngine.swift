@@ -169,6 +169,14 @@ public final class BadgerEngine {
         fetchAll().filter { $0.state == state }.map { snapshot(of: $0) }
     }
 
+    /// Reusable ladder templates as Sendable snapshots (backs LadderEntity/LadderQuery).
+    /// Empty until M7 seeds the named presets (D10).
+    public func ladderTemplateSnapshots() -> [LadderSnapshot] {
+        var fd = FetchDescriptor<LadderTemplate>()
+        fd.sortBy = [SortDescriptor(\.name)]
+        return ((try? context.fetch(fd)) ?? []).map { LadderSnapshot(id: $0.id, name: $0.name) }
+    }
+
     // MARK: - Channel observation (§14 path 1)
 
     /// Start consuming the live transition stream of every observable channel
