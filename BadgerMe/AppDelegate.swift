@@ -24,6 +24,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     let container: ModelContainer
     let engine: BadgerEngine
 
+    #if DEBUG
+    /// SP9/B1 device diagnostic: probe the per-app AlarmKit alarm ceiling. nil if no AlarmKit.
+    let debugProbeCeiling: (@Sendable () async -> Int)?
+    #endif
+
     /// App-wide default snooze until Settings exists (§16/D6, M7).
     private let defaultSnooze: TimeInterval = 9 * 60
 
@@ -34,7 +39,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         var registry = AlertChannelRegistry()
         registry.register(NotificationChannel())
         #if canImport(AlarmKit)
-        registry.register(AlarmKitChannel())   // hard/breakthrough rungs (M3); app floor is iOS 26.1 (D9)
+        let alarmChannel = AlarmKitChannel()   // hard/breakthrough rungs (M3); app floor is iOS 26.1 (D9)
+        registry.register(alarmChannel)
+        #if DEBUG
+        debugProbeCeiling = { await alarmChannel.probeCeiling() }   // SP9/B1 diagnostic
+        #endif
+        #else
+        #if DEBUG
+        debugProbeCeiling = nil
+        #endif
         #endif
         let engine = BadgerEngine(container: container, registry: registry)
         self.engine = engine

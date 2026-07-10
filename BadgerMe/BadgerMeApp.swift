@@ -16,7 +16,11 @@ struct BadgerMeApp: App {
 
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            ContentView(engine: appDelegate.engine, probeCeiling: appDelegate.debugProbeCeiling)
+            #else
             ContentView(engine: appDelegate.engine)
+            #endif
         }
         // Same container the engine writes to, so @Query reflects engine saves live.
         .modelContainer(appDelegate.container)

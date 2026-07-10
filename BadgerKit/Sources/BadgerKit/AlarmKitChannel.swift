@@ -130,6 +130,29 @@ public actor AlarmKitChannel: AlertChannel {
         }
     }
 
+    #if DEBUG
+    /// Diagnostic (SP9/B1): arm minimal far-future alarms until the per-app limit throws,
+    /// report the count reached, then cancel them all. Throwaway dev instrumentation —
+    /// never used in production paths. Reuses `schedule`/`cancel`, so no config drift.
+    public func probeCeiling(maxTries: Int = 512) async -> Int {
+        let action = ChannelAction(channelID: id, prominence: .breakthrough)
+        let far = Date().addingTimeInterval(3600)
+        var refs: [ScheduledRef] = []
+        while refs.count < maxTries {
+            do {
+                let ref = try await schedule(action, at: far, recurrence: nil,
+                                             badgerID: UUID(), slot: .rung(0))
+                refs.append(ref)
+            } catch {
+                break
+            }
+        }
+        let count = refs.count
+        for ref in refs { await cancel(ref) }
+        return count
+    }
+    #endif
+
     public nonisolated func observe() -> AsyncStream<ChannelEvent>? {
         AsyncStream { continuation in
             let task = Task {
