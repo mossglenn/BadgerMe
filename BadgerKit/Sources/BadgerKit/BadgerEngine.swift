@@ -17,6 +17,7 @@
 
 import Foundation
 import SwiftData
+import CoreSpotlight
 
 @MainActor
 public final class BadgerEngine {
@@ -60,6 +61,7 @@ public final class BadgerEngine {
                             tint: tint, iconName: iconName, ladder: ladder)
         context.insert(badger)
         await dispatch(.created(startAt: startAt), to: badger)
+        await indexInSpotlight(badger.id)
         return badger.id
     }
 
@@ -82,6 +84,7 @@ public final class BadgerEngine {
         for e in events { context.delete(e) }
         context.delete(badger)
         try? context.save()
+        await deindexFromSpotlight(id)
     }
 
     /// Notification response routing (delegate -> engine). Done/Snooze resolve; any
@@ -119,6 +122,7 @@ public final class BadgerEngine {
     public func replace(_ id: UUID, startAt: Date? = nil) async -> BadgerSnapshot? {
         guard let badger = fetch(id) else { return nil }
         await dispatch(.replace(startAt: startAt ?? now()), to: badger)
+        await indexInSpotlight(id)
         return snapshot(of: badger)
     }
 
@@ -141,6 +145,7 @@ public final class BadgerEngine {
         if let iconName { badger.iconName = iconName }
         if let rungs { badger.ladder = BoundLadder(rungs: rungs.sorted { $0.index < $1.index }) }
         await dispatch(.edited, to: badger)
+        await indexInSpotlight(id)
         return snapshot(of: badger)
     }
 
@@ -400,6 +405,24 @@ public final class BadgerEngine {
                        state: badger.state, currentLevel: badger.currentLevel,
                        totalLevels: badger.ladder?.rungs.count ?? 0,
                        iconName: badger.iconName, tint: badger.tint)
+    }
+
+    // MARK: - Spotlight indexing (M4/§11, SP15). Best-effort; iOS-only (BadgerEntity is
+    // #if os(iOS)), so these are no-ops on macOS and leave `swift test` untouched.
+
+    /// Index (or refresh) a Badger in Spotlight after create/edit/replace.
+    private func indexInSpotlight(_ id: UUID) async {
+        #if os(iOS)
+        guard let snap = snapshot(id: id) else { return }
+        try? await CSSearchableIndex.default().indexAppEntities([BadgerEntity(snap)])
+        #endif
+    }
+
+    /// Remove a Badger from Spotlight on delete.
+    private func deindexFromSpotlight(_ id: UUID) async {
+        #if os(iOS)
+        try? await CSSearchableIndex.default().deleteAppEntities(identifiedBy: [id], ofType: BadgerEntity.self)
+        #endif
     }
 
     private func nextSequence(for badgerID: UUID) -> Int {
