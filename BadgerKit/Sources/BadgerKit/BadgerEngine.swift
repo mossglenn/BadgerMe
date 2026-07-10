@@ -110,6 +110,65 @@ public final class BadgerEngine {
         await runReconcile(on: badger)
     }
 
+    // MARK: - Replace / Edit (M4 — the mutation ops the intent catalog needs)
+
+    /// Re-run a terminal Badger from its bound ladder at a fresh start (D12, §8/§11).
+    /// No-op on a non-terminal Badger (the reducer guards `.replace`). Returns the
+    /// refreshed snapshot, or nil if the id is unknown.
+    @discardableResult
+    public func replace(_ id: UUID, startAt: Date? = nil) async -> BadgerSnapshot? {
+        guard let badger = fetch(id) else { return nil }
+        await dispatch(.replace(startAt: startAt ?? now()), to: badger)
+        return snapshot(of: badger)
+    }
+
+    /// Edit a live Badger (D2 baseline: title/notes freely; a schedule change re-arms).
+    /// Any nil argument leaves that field unchanged. The model is mutated BEFORE
+    /// dispatching `.edited`, so the reducer's cancel + re-arm-from-current-level runs
+    /// against the NEW ladder/context. No-op on a terminal Badger (the reducer guards
+    /// `.edited`). v1 note: `notes` cannot be CLEARED here (nil == unchanged); a
+    /// dedicated clear is deferred with D2.
+    @discardableResult
+    public func edit(_ id: UUID, title: String? = nil, notes: String? = nil,
+                     rungs: [RungSpec]? = nil, maxSnoozeCount: Int? = nil,
+                     tint: String? = nil, iconName: String? = nil) async -> BadgerSnapshot? {
+        guard let badger = fetch(id) else { return nil }
+        guard !isTerminal(badger.state) else { return snapshot(of: badger) }
+        if let title { badger.title = title }
+        if let notes { badger.notes = notes }
+        if let maxSnoozeCount { badger.maxSnoozeCount = maxSnoozeCount }
+        if let tint { badger.tint = tint }
+        if let iconName { badger.iconName = iconName }
+        if let rungs { badger.ladder = BoundLadder(rungs: rungs.sorted { $0.index < $1.index }) }
+        await dispatch(.edited, to: badger)
+        return snapshot(of: badger)
+    }
+
+    // MARK: - Read path (M4 — feeds BadgerEntity + the entity queries, §11)
+
+    /// One Badger by id, projected to a Sendable snapshot.
+    public func snapshot(id: UUID) -> BadgerSnapshot? { fetch(id).map { snapshot(of: $0) } }
+
+    /// Every Badger (any state), newest first.
+    public func allSnapshots() -> [BadgerSnapshot] { fetchAll().map { snapshot(of: $0) } }
+
+    /// Non-terminal Badgers (pending / active / snoozed) — "what's badgering me"
+    /// (GetActiveBadgersIntent) and the BadgerPropertyQuery "active" filter.
+    public func activeSnapshots() -> [BadgerSnapshot] {
+        fetchAll().filter { !isTerminal($0.state) }.map { snapshot(of: $0) }
+    }
+
+    /// Case-insensitive title substring match (backs BadgerStringQuery).
+    public func snapshots(matchingName name: String) -> [BadgerSnapshot] {
+        let needle = name.lowercased()
+        return fetchAll().filter { $0.title.lowercased().contains(needle) }.map { snapshot(of: $0) }
+    }
+
+    /// All Badgers in a given lifecycle state (backs BadgerPropertyQuery).
+    public func snapshots(inState state: StoredBadgerState) -> [BadgerSnapshot] {
+        fetchAll().filter { $0.state == state }.map { snapshot(of: $0) }
+    }
+
     // MARK: - Channel observation (§14 path 1)
 
     /// Start consuming the live transition stream of every observable channel
@@ -308,6 +367,21 @@ public final class BadgerEngine {
         var fd = FetchDescriptor<Badger>(predicate: #Predicate { $0.id == id })
         fd.fetchLimit = 1
         return (try? context.fetch(fd))?.first
+    }
+
+    /// All Badgers newest-first (createdAt desc). Read side for the M4 snapshots.
+    private func fetchAll() -> [Badger] {
+        var fd = FetchDescriptor<Badger>()
+        fd.sortBy = [SortDescriptor(\.createdAt, order: .reverse)]
+        return (try? context.fetch(fd)) ?? []
+    }
+
+    /// Project a Badger to its Sendable read model (main-actor read of the @Model).
+    private func snapshot(of badger: Badger) -> BadgerSnapshot {
+        BadgerSnapshot(id: badger.id, title: badger.title, notes: badger.notes,
+                       state: badger.state, currentLevel: badger.currentLevel,
+                       totalLevels: badger.ladder?.rungs.count ?? 0,
+                       iconName: badger.iconName, tint: badger.tint)
     }
 
     private func nextSequence(for badgerID: UUID) -> Int {
