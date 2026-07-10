@@ -21,7 +21,7 @@ import CoreSpotlight
 
 public struct BadgerEntity: AppEntity, IndexedEntity {
     public static let typeDisplayRepresentation: TypeDisplayRepresentation = "Badger"
-    public static var defaultQuery: BadgerByIDQuery { BadgerByIDQuery() }
+    public static var defaultQuery: BadgerQuery { BadgerQuery() }
 
     public let id: UUID
     public let title: String
