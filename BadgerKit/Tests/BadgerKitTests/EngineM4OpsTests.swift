@@ -204,4 +204,29 @@ struct EngineM4OpsTests {
         #expect(s.state == .done)
         #expect(eventKinds(id, c).filter { $0 == .edited }.isEmpty)
     }
+
+    // MARK: - Create-path bridge (M4)
+
+    @Test("ladderRungs returns nil for an unknown template id (v1 seeds none)")
+    func ladderRungsUnknownIsNil() async throws {
+        let c = try makeModelContainer(inMemory: true)
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeChannel()]))
+        #expect(engine.ladderRungs(templateID: UUID()) == nil)
+    }
+
+    @Test("the default fallback ladder creates a 3-rung pending Badger")
+    func defaultLadderCreates() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0),
+                                     rungs: BadgerLadders.defaultRungs,
+                                     maxSnoozeCount: BadgerLadders.defaultMaxSnoozeCount)
+        let s = try #require(engine.snapshot(id: id))
+        #expect(s.totalLevels == 3)
+        #expect(s.state == .pending)
+        #expect(await fake.rungSlots == [0, 1, 2])
+    }
 }

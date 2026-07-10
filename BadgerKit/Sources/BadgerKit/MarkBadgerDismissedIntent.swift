@@ -1,6 +1,10 @@
 //
 //  MarkBadgerDismissedIntent.swift
-//  BadgerKit — the AlarmKit stop-action intent for dismissal logging.
+//  BadgerKit — the AlarmKit stop-action intent for dismissal logging (M4, §8/§11).
+//
+//  Wired to AlarmConfiguration.stopIntent so a system Stop appends an `alarmDismissed`
+//  event (non-resolving; the ladder continues, §8). Same BadgerEntity-parameter reshape
+//  as MarkBadgerDoneIntent; the channel constructs it from the id + rung it holds.
 //
 
 import Foundation
@@ -8,23 +12,21 @@ import Foundation
 #if os(iOS)
 import AppIntents
 
-struct MarkBadgerDismissedIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Mark Badger Alarm Dismissed"
+public struct MarkBadgerDismissedIntent: LiveActivityIntent {
+    public static let title: LocalizedStringResource = "Mark Badger Alarm Dismissed"
 
-    @Parameter(title: "Badger ID") var badgerID: String
-    @Parameter(title: "Rung") var rung: Int
-    @Dependency var engine: BadgerEngine
+    @Parameter(title: "Badger") public var badger: BadgerEntity
+    @Parameter(title: "Rung") public var rung: Int
+    @Dependency public var engine: BadgerEngine
 
-    init() {}
-    init(badgerID: String, rung: Int) {
-        self.badgerID = badgerID
+    public init() {}
+    public init(badgerID: UUID, rung: Int) {
+        self.badger = BadgerEntity(id: badgerID)
         self.rung = rung
     }
 
-    func perform() async throws -> some IntentResult {
-        if let id = UUID(uuidString: badgerID) {
-            await engine.markAlarmDismissed(id, rung: rung)
-        }
+    public func perform() async throws -> some IntentResult {
+        await engine.markAlarmDismissed(badger.id, rung: rung)
         return .result()
     }
 }

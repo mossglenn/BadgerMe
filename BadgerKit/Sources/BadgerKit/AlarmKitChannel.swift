@@ -82,8 +82,8 @@ public actor AlarmKitChannel: AlertChannel {
         let config = AlarmManager.AlarmConfiguration(
             schedule: .fixed(fireDate),
             attributes: attributes,
-            stopIntent: MarkBadgerDismissedIntent(badgerID: badgerID.uuidString, rung: rungIndex(of: slot)),
-            secondaryIntent: MarkBadgerDoneIntent(badgerID: badgerID.uuidString),
+            stopIntent: MarkBadgerDismissedIntent(badgerID: badgerID, rung: rungIndex(of: slot)),
+            secondaryIntent: MarkBadgerDoneIntent(badgerID: badgerID),
             sound: sound(for: action.soundRef))
 
         _ = try await AlarmManager.shared.schedule(id: alarmID, configuration: config)

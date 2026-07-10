@@ -1,17 +1,21 @@
 //
 //  MarkBadgerDoneIntent.swift
-//  BadgerKit — the resolve-from-alarm App Intent (a minimal M4 slice pulled into M3).
+//  BadgerKit — the resolve-from-alarm / catalog "mark done" App Intent (M4, §11).
 //
-//  AlarmKit's AlarmConfiguration.secondaryIntent is typed `(any LiveActivityIntent)?`
-//  (verified against the iOS 26.5 .swiftinterface), so the hard-rung "I did it" button
-//  must be a LiveActivityIntent. LiveActivityIntents run IN the app process, where the
-//  composition root (AppDelegate) registers the engine as an @Dependency (L11/§11) — so
-//  this resolves the same shared engine the console and notification delegate use. The
-//  full entity/query/intent catalog + App Shortcuts stay M4; this is only the button the
-//  M3 alarm channel needs (SP4 is the device spike for this path).
+//  AlarmKit's AlarmConfiguration.secondaryIntent is `(any LiveActivityIntent)?` (verified
+//  against the 26.5 .swiftinterface), and LiveActivityIntents run IN the app process,
+//  where AppDelegate registers the engine as an @Dependency (L11/§11) — so this resolves
+//  the same shared engine the console / notification delegate use.
 //
-//  Guarded `#if os(iOS)` because LiveActivityIntent / Live Activities are iOS-only,
-//  keeping the package compiling on macOS for `swift test`.
+//  The parameter is a BadgerEntity (the Siri/Shortcuts surface) rather than a raw id;
+//  the AlarmKit secondary button / Live-Activity Done button construct it from the id
+//  they hold via `init(badgerID:)`. When App Intents re-resolves the parameter through
+//  BadgerQuery, the display fields refresh; perform() only needs `badger.id`. (Headless
+//  entity re-resolution in the force-quit alarm process is an SP4/SP10-adjacent device
+//  re-check — see the M4 device-verify note.)
+//
+//  #if os(iOS): LiveActivityIntent / Live Activities are iOS-only, keeping BadgerKit
+//  compiling on macOS for `swift test`.
 //
 
 import Foundation
@@ -19,17 +23,19 @@ import Foundation
 #if os(iOS)
 import AppIntents
 
-struct MarkBadgerDoneIntent: LiveActivityIntent {
-    static let title: LocalizedStringResource = "Mark Badger Done"
+public struct MarkBadgerDoneIntent: LiveActivityIntent {
+    public static let title: LocalizedStringResource = "Mark Badger Done"
 
-    @Parameter(title: "Badger ID") var badgerID: String
-    @Dependency var engine: BadgerEngine
+    @Parameter(title: "Badger") public var badger: BadgerEntity
+    @Dependency public var engine: BadgerEngine
 
-    init() {}
-    init(badgerID: String) { self.badgerID = badgerID }
+    public init() {}
 
-    func perform() async throws -> some IntentResult {
-        if let id = UUID(uuidString: badgerID) { await engine.markDone(id) }
+    /// The AlarmKit secondary button / Live-Activity Done button hold only the id.
+    public init(badgerID: UUID) { self.badger = BadgerEntity(id: badgerID) }
+
+    public func perform() async throws -> some IntentResult {
+        await engine.markDone(badger.id)
         return .result()
     }
 }

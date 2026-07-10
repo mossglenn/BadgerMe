@@ -177,6 +177,16 @@ public final class BadgerEngine {
         return ((try? context.fetch(fd)) ?? []).map { LadderSnapshot(id: $0.id, name: $0.name) }
     }
 
+    /// Resolve a ladder template's rungs + snooze cap for CreateBadgerIntent's `ladder`
+    /// parameter. Returns nil for an unknown id — v1 seeds no templates until M7/D10, so
+    /// create falls back to `BadgerLadders.defaultRungs`.
+    public func ladderRungs(templateID: UUID) -> (rungs: [RungSpec], maxSnoozeCount: Int)? {
+        var fd = FetchDescriptor<LadderTemplate>(predicate: #Predicate { $0.id == templateID })
+        fd.fetchLimit = 1
+        guard let t = (try? context.fetch(fd))?.first else { return nil }
+        return (t.rungs.sorted { $0.index < $1.index }, t.defaultMaxSnoozeCount)
+    }
+
     // MARK: - Channel observation (§14 path 1)
 
     /// Start consuming the live transition stream of every observable channel
