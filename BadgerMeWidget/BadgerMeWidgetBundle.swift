@@ -14,5 +14,8 @@ struct BadgerMeWidgetBundle: WidgetBundle {
         BadgerMeWidget()
         BadgerMeWidgetControl()
         BadgerMeWidgetLiveActivity()
+        #if canImport(AlarmKit)
+        BadgerAlarmLiveActivity()
+        #endif
     }
 }

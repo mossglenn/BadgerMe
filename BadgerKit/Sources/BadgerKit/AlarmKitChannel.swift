@@ -41,9 +41,13 @@ import SwiftUI
 /// id (§12). `nonisolated` so it satisfies AlarmMetadata (Sendable) even under Xcode 26's
 /// default @MainActor type isolation.
 @available(iOS 26.1, *)
-nonisolated struct BadgerAlarmMetadata: AlarmMetadata {
-    let badgerID: UUID
-    let rung: Int
+public nonisolated struct BadgerAlarmMetadata: AlarmMetadata {
+    public let badgerID: UUID
+    public let rung: Int
+    public init(badgerID: UUID, rung: Int) {
+        self.badgerID = badgerID
+        self.rung = rung
+    }
 }
 
 @available(iOS 26.1, *)
