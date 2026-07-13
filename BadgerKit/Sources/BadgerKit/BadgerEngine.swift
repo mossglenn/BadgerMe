@@ -37,17 +37,33 @@ public final class BadgerEngine {
 
     private var context: ModelContext { container.mainContext }
 
-    public init(container: ModelContainer,
-                registry: AlertChannelRegistry,
-                repeatBatchSize: Int = 16,
-                now: @escaping () -> Date = { Date() }) {
+    /// Public entry: defaults the ambient Live-Activity controller per platform — the real
+    /// ActivityKit controller on iOS (M5 CP2b), a no-op on macOS so `swift test` needs no
+    /// ActivityKit.
+    public convenience init(container: ModelContainer,
+                            registry: AlertChannelRegistry,
+                            repeatBatchSize: Int = 16,
+                            now: @escaping () -> Date = { Date() }) {
+        #if os(iOS)
+        let controller: any LiveActivityControlling = LiveActivityController()
+        #else
+        let controller: any LiveActivityControlling = NoopLiveActivityController()
+        #endif
+        self.init(container: container, registry: registry, liveActivity: controller,
+                  repeatBatchSize: repeatBatchSize, now: now)
+    }
+
+    /// Designated init. `liveActivity` is injectable so tests can record the ambient-activity
+    /// calls; internal because `LiveActivityControlling` is internal (a public init couldn't
+    /// take it).
+    init(container: ModelContainer,
+         registry: AlertChannelRegistry,
+         liveActivity: any LiveActivityControlling,
+         repeatBatchSize: Int = 16,
+         now: @escaping () -> Date = { Date() }) {
         self.container = container
         self.registry = registry
-        #if os(iOS)
-        self.liveActivity = LiveActivityController()      // real ActivityKit impl (M5 CP2b)
-        #else
-        self.liveActivity = NoopLiveActivityController()  // macOS `swift test`: no ActivityKit
-        #endif
+        self.liveActivity = liveActivity
         self.repeatBatchSize = repeatBatchSize
         self.now = now
     }
