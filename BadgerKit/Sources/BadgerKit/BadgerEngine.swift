@@ -43,7 +43,11 @@ public final class BadgerEngine {
                 now: @escaping () -> Date = { Date() }) {
         self.container = container
         self.registry = registry
-        self.liveActivity = NoopLiveActivityController()   // real ActivityKit impl injected in M5
+        #if os(iOS)
+        self.liveActivity = LiveActivityController()      // real ActivityKit impl (M5 CP2b)
+        #else
+        self.liveActivity = NoopLiveActivityController()  // macOS `swift test`: no ActivityKit
+        #endif
         self.repeatBatchSize = repeatBatchSize
         self.now = now
     }
