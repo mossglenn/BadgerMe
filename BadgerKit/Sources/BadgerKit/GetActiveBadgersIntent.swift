@@ -1,11 +1,12 @@
 //
 //  GetActiveBadgersIntent.swift
-//  BadgerKit — "what's badgering me" (M4, §11).
+//  BadgerKit — "what's badgering me" (M4/§11; interactive card added M5 CP4b).
 //
-//  Returns the active Badgers + a spoken summary. The interactive snippet card
-//  (SnippetIntent-driven, per-Badger Done/Snooze buttons) is deferred to CP5, where the
-//  snippet UI is built alongside the widgets; the value + dialog here already answer the
-//  query for Siri/Shortcuts.
+//  Returns a spoken summary + an interactive snippet card (ActiveBadgersSnippetIntent) with a
+//  Done/Snooze button per active Badger. The 26.5 AppIntents .swiftinterface has no result
+//  factory combining a returned value with a snippet, so this returns `dialog + snippetIntent`
+//  and drops the earlier (unused) `[BadgerEntity]` value (CP4b Option A). The App Shortcut wiring
+//  is unchanged — it still points at this intent.
 //
 
 import Foundation
@@ -13,6 +14,7 @@ import Foundation
 #if os(iOS)
 import AppIntents
 
+@available(iOS 26.0, *)
 public struct GetActiveBadgersIntent: AppIntent {
     public static let title: LocalizedStringResource = "Get Active Badgers"
     public static let description = IntentDescription("List the Badgers currently escalating.")
@@ -21,12 +23,12 @@ public struct GetActiveBadgersIntent: AppIntent {
 
     public init() {}
 
-    public func perform() async throws -> some IntentResult & ReturnsValue<[BadgerEntity]> & ProvidesDialog {
-        let entities = await engine.activeSnapshots().map(BadgerEntity.init)
-        let dialog: IntentDialog = entities.isEmpty
+    public func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetIntent {
+        let count = await engine.activeSnapshots().count
+        let dialog: IntentDialog = count == 0
             ? "Nothing is badgering you right now."
-            : "You have \(entities.count) active \(entities.count == 1 ? "Badger" : "Badgers")."
-        return .result(value: entities, dialog: dialog)
+            : "You have \(count) active \(count == 1 ? "Badger" : "Badgers")."
+        return .result(dialog: dialog, snippetIntent: ActiveBadgersSnippetIntent())
     }
 }
 #endif
