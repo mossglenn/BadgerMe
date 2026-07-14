@@ -58,9 +58,11 @@ private struct AlarmModeReadout: View {
     var body: some View {
         switch context.state.mode {
         case .countdown(let c):
-            // startDate <= fireDate by construction, so the range is always valid; Text
-            // clamps the display at zero past fireDate (never runs away counting up). §12.
-            Text(timerInterval: c.startDate...c.fireDate, countsDown: true)
+            // Guard the range: in .countdown mode startDate <= fireDate holds, but a clock
+            // adjustment or SDK edge must not trap ClosedRange — that would fail the whole
+            // alarm presentation (the A5 "audio, no UI" failure class). min(...) keeps it
+            // valid; Text clamps the display at zero past fireDate. §12, code review #2.
+            Text(timerInterval: min(c.startDate, c.fireDate)...c.fireDate, countsDown: true)
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: 68)
