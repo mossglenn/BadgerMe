@@ -98,7 +98,7 @@ public final class BadgerEngine {
     public func delete(_ id: UUID) async {
         guard let badger = fetch(id) else { return }
         await cancelPending(for: badger)
-        await liveActivity.end(badgerID: id)
+        await liveActivity.end(badgerID: id, terminalPhase: nil)
         let events = (try? context.fetch(FetchDescriptor<EventRecord>(
             predicate: #Predicate { $0.badgerID == id }))) ?? []
         for e in events { context.delete(e) }
@@ -309,7 +309,15 @@ public final class BadgerEngine {
                 await liveActivity.update(badgerID: badger.id, phase: phase, level: level,
                                           totalLevels: ctx.rungs.count, nextFire: nextFire)
             case .endLiveActivity:
-                await liveActivity.end(badgerID: badger.id)
+                // Terminal beat (§16, code review #7): done/stopped hold briefly before clearing;
+                // a non-terminal teardown (e.g. delete) passes nil for immediate dismissal.
+                let terminalPhase: ActivityPhase?
+                switch state.status {
+                case .done:    terminalPhase = .done
+                case .stopped: terminalPhase = .stopped
+                default:       terminalPhase = nil
+                }
+                await liveActivity.end(badgerID: badger.id, terminalPhase: terminalPhase)
             }
         }
     }

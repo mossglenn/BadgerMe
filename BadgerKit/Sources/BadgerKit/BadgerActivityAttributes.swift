@@ -53,8 +53,6 @@ public struct BadgerActivityAttributes: ActivityAttributes {
     /// the locked core); the controller maps onto this when building ContentState. `overdue`
     /// is presentation-only — the widget applies it when the activity goes stale
     /// (`context.isStale`; staleDate rides on the ActivityContent, not ContentState), never emitted.
-    public enum Phase: String, Codable, Hashable, Sendable {
-        case armed, escalating, repeating, snoozed, done, stopped, overdue
-    }
+    public typealias Phase = BadgerActivityPhase
 }
 #endif

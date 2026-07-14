@@ -43,9 +43,16 @@ struct LiveActivityController: LiveActivityControlling {
         await activity.update(content)
     }
 
-    func end(badgerID: UUID) async {
+    func end(badgerID: UUID, terminalPhase: ActivityPhase?) async {
         guard let activity = activity(for: badgerID) else { return }
-        await activity.end(using: nil, dismissalPolicy: .immediate)
+        guard let terminalPhase else {
+            await activity.end(using: nil, dismissalPolicy: .immediate)   // delete / non-terminal teardown
+            return
+        }
+        // Terminal beat (§16, code review #7): hold "Done"/"Stopped" briefly, then clear.
+        await activity.end(
+            using: contentState(phase: terminalPhase, level: 0, totalLevels: 0, nextFire: nil),
+            dismissalPolicy: .after(Date().addingTimeInterval(4)))
     }
 
     // MARK: - Helpers

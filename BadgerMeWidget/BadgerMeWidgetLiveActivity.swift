@@ -30,7 +30,11 @@ struct BadgerMeWidgetLiveActivity: Widget {
                     AmbientCountdown(context: context).font(.title3.monospacedDigit())
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.attributes.title).font(.headline).lineLimit(1)
+                    VStack(spacing: 2) {
+                        Text(context.attributes.title).font(.headline).lineLimit(1)
+                        Text(ambientStatusLine(context)).font(.caption2)
+                            .foregroundStyle(.secondary).lineLimit(1)
+                    }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     if showsActions(context) {
@@ -118,10 +122,7 @@ private struct AmbientCountdown: View {
 
 /// Actions (Done/Snooze) are offered while the Badger is non-terminal.
 private func showsActions(_ context: ActivityViewContext<BadgerActivityAttributes>) -> Bool {
-    switch context.state.phase {
-    case .done, .stopped: return false
-    default:              return true
-    }
+    AmbientPresentation.showsActions(context.state.phase)
 }
 
 private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes>) -> String {
@@ -135,25 +136,15 @@ private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes
 }
 
 private func ambientStatusLine(_ context: ActivityViewContext<BadgerActivityAttributes>) -> String {
-    let s = context.state
-    if context.isStale, isEscalating(s.phase) { return "Overdue — escalating" }
-    switch s.phase {
-    case .armed:      return "Armed"
-    case .escalating: return "Level \(s.currentLevelIndex + 1) of \(s.totalLevels)"
-    case .repeating:  return "Repeating — level \(s.totalLevels) of \(s.totalLevels)"
-    case .snoozed:    return "Snoozed"
-    case .done:       return "Done"
-    case .stopped:    return "Stopped"
-    case .overdue:    return "Overdue — escalating"
-    }
+    AmbientPresentation.statusLine(phase: context.state.phase,
+                                   level: context.state.currentLevelIndex,
+                                   totalLevels: context.state.totalLevels,
+                                   isStale: context.isStale)
 }
 
 /// Phases where a passed staleDate means "overdue" (vs. terminal / snoozed, which don't).
 private func isEscalating(_ phase: BadgerActivityAttributes.Phase) -> Bool {
-    switch phase {
-    case .armed, .escalating, .repeating, .overdue: return true
-    case .snoozed, .done, .stopped:                 return false
-    }
+    AmbientPresentation.isEscalating(phase)
 }
 
 // MARK: - Escalation color (§16, code review #6)

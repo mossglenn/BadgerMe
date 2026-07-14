@@ -20,7 +20,7 @@ actor RecordingLiveActivityController: LiveActivityControlling {
     enum Call: Equatable {
         case start(badgerID: UUID, tint: String?, iconName: String?, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
         case update(badgerID: UUID, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
-        case end(badgerID: UUID)
+        case end(badgerID: UUID, terminalPhase: ActivityPhase?)
     }
     private(set) var calls: [Call] = []
     func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
@@ -33,7 +33,7 @@ actor RecordingLiveActivityController: LiveActivityControlling {
         calls.append(.update(badgerID: badgerID, phase: phase, level: level,
                              totalLevels: totalLevels, nextFire: nextFire))
     }
-    func end(badgerID: UUID) async { calls.append(.end(badgerID: badgerID)) }
+    func end(badgerID: UUID, terminalPhase: ActivityPhase?) async { calls.append(.end(badgerID: badgerID, terminalPhase: terminalPhase)) }
 
     var updates: [Call] { calls.filter { if case .update = $0 { return true } else { return false } } }
 }
@@ -121,7 +121,7 @@ struct EngineLiveActivityTests {
                                                   totalLevels: 3, nextFire: at(150)))
         clock = at(40)
         await engine.markDone(id)
-        #expect(await rec.calls.last == .end(badgerID: id))
+        #expect(await rec.calls.last == .end(badgerID: id, terminalPhase: .done))
     }
 
     @Test("reconcile after backgrounding refreshes the card to the caught-up repeating state")

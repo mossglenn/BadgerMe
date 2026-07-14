@@ -23,7 +23,7 @@ protocol LiveActivityControlling: Sendable {
                level: Int, totalLevels: Int, nextFire: Date?) async
     func update(badgerID: UUID, phase: ActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async
-    func end(badgerID: UUID) async
+    func end(badgerID: UUID, terminalPhase: ActivityPhase?) async
 }
 
 /// Stand-in used on macOS and until the real controller is wired (CP2b): does nothing.
@@ -32,5 +32,5 @@ struct NoopLiveActivityController: LiveActivityControlling {
                level: Int, totalLevels: Int, nextFire: Date?) async {}
     func update(badgerID: UUID, phase: ActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async {}
-    func end(badgerID: UUID) async {}
+    func end(badgerID: UUID, terminalPhase: ActivityPhase?) async {}
 }
