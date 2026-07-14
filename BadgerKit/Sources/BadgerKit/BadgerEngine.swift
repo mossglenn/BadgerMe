@@ -38,25 +38,23 @@ public final class BadgerEngine {
     private var context: ModelContext { container.mainContext }
 
     /// Public entry: defaults the ambient Live-Activity controller per platform — the real
-    /// ActivityKit controller on iOS (M5 CP2b), a no-op on macOS so `swift test` needs no
-    /// ActivityKit.
+    /// Convenience init used by tests and previews: defaults the ambient-activity controller
+    /// to a no-op. The app injects the real `LiveActivityController` through the designated
+    /// init from its composition root (AppDelegate, L11) — the engine names no ActivityKit
+    /// type, staying framework-agnostic (code review #9).
     public convenience init(container: ModelContainer,
                             registry: AlertChannelRegistry,
                             repeatBatchSize: Int = 16,
                             now: @escaping () -> Date = { Date() }) {
-        #if os(iOS)
-        let controller: any LiveActivityControlling = LiveActivityController()
-        #else
-        let controller: any LiveActivityControlling = NoopLiveActivityController()
-        #endif
-        self.init(container: container, registry: registry, liveActivity: controller,
+        self.init(container: container, registry: registry,
+                  liveActivity: NoopLiveActivityController(),
                   repeatBatchSize: repeatBatchSize, now: now)
     }
 
-    /// Designated init. `liveActivity` is injectable so tests can record the ambient-activity
-    /// calls; internal because `LiveActivityControlling` is internal (a public init couldn't
-    /// take it).
-    init(container: ModelContainer,
+    /// Designated init. `liveActivity` is injected — tests pass a recording double, the app
+    /// passes the real `LiveActivityController` (code review #9); macOS/preview get the no-op
+    /// via the convenience init above. Public now that `LiveActivityControlling` is public.
+    public init(container: ModelContainer,
          registry: AlertChannelRegistry,
          liveActivity: any LiveActivityControlling,
          repeatBatchSize: Int = 16,

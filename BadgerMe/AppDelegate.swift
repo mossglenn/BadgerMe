@@ -51,7 +51,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         debugProbeCeiling = nil
         #endif
         #endif
-        let engine = BadgerEngine(container: container, registry: registry)
+        let engine = BadgerEngine(container: container, registry: registry,
+                                  liveActivity: LiveActivityController())
         self.engine = engine
         // L11/§11: register the shared engine so in-app intents (the alarm's "I did it"
         // secondary button, MarkBadgerDoneIntent) resolve it via @Dependency.

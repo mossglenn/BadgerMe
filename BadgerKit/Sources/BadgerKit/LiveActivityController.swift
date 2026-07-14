@@ -17,9 +17,11 @@
 import Foundation
 import ActivityKit
 
-struct LiveActivityController: LiveActivityControlling {
+public struct LiveActivityController: LiveActivityControlling {
 
-    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: BadgerActivityPhase,
+    public init() {}
+
+    public func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: BadgerActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         // If one is somehow already live for this Badger, update rather than duplicate.
@@ -35,7 +37,7 @@ struct LiveActivityController: LiveActivityControlling {
         _ = try? Activity.request(attributes: attributes, content: content)
     }
 
-    func update(badgerID: UUID, phase: BadgerActivityPhase,
+    public func update(badgerID: UUID, phase: BadgerActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async {
         guard let activity = activity(for: badgerID) else { return }
         let content = ActivityContent(
@@ -44,7 +46,7 @@ struct LiveActivityController: LiveActivityControlling {
         await activity.update(content)
     }
 
-    func end(badgerID: UUID, terminalPhase: BadgerActivityPhase?) async {
+    public func end(badgerID: UUID, terminalPhase: BadgerActivityPhase?) async {
         guard let activity = activity(for: badgerID) else { return }
         guard let terminalPhase else {
             await activity.end(using: nil, dismissalPolicy: .immediate)   // delete / non-terminal teardown
