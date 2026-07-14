@@ -58,7 +58,7 @@ struct LiveActivityController: LiveActivityControlling {
                               nextFire: Date?) -> BadgerActivityAttributes.ContentState {
         BadgerActivityAttributes.ContentState(
             currentLevelIndex: level, totalLevels: totalLevels,
-            nextFireDate: nextFire, phase: mapPhase(phase), staleDate: nextFire)
+            nextFireDate: nextFire, phase: mapPhase(phase))
     }
 
     private func mapPhase(_ p: ActivityPhase) -> BadgerActivityAttributes.Phase {

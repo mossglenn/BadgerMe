@@ -44,7 +44,6 @@ public final class Badger {
     /// can cancel prior-process alarms (M3 cold-kill fix). Notification rungs are NOT
     /// tracked here — `NotificationChannel.cancelAll` prefix-scans the system by namespace.
     public var armedAlarms: [ArmedRef]
-    public var liveActivityID: String?
     public var focusTags: [String]
 
     @Relationship(deleteRule: .cascade) public var ladder: BoundLadder?
@@ -64,7 +63,6 @@ public final class Badger {
                 currentLevel: Int = 0, snoozeCount: Int = 0, snoozeUntil: Date? = nil,
                 resolvedAt: Date? = nil, maxSnoozeCount: Int, tint: String = "accent",
                 iconName: String? = nil, armedAlarms: [ArmedRef] = [],
-                liveActivityID: String? = nil,
                 focusTags: [String] = [], ladder: BoundLadder? = nil) {
         self.id = id
         self.title = title
@@ -81,7 +79,6 @@ public final class Badger {
         self.tint = tint
         self.iconName = iconName
         self.armedAlarms = armedAlarms
-        self.liveActivityID = liveActivityID
         self.focusTags = focusTags
         self.ladder = ladder
     }
