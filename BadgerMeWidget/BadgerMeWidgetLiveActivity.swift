@@ -83,7 +83,7 @@ private struct AmbientActionButtons: View {
                 Label("Done", systemImage: "checkmark")
             }
             .tint(.green)
-            Button(intent: SnoozeBadgerIntent(badgerID: context.attributes.badgerID, minutes: 15)) {
+            Button(intent: SnoozeBadgerIntent(badgerID: context.attributes.badgerID, minutes: BadgerConfig.defaultSnoozeMinutes)) {
                 Label("Snooze", systemImage: "moon.zzz")
             }
             .tint(.orange)

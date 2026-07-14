@@ -15,11 +15,13 @@ public struct SnoozeBadgerIntent: LiveActivityIntent {
     public static let title: LocalizedStringResource = "Snooze Badger"
 
     @Parameter(title: "Badger") public var badger: BadgerEntity
-    @Parameter(title: "Minutes", default: 15) public var minutes: Int
+    // Shortcuts-editor default; mirrors BadgerConfig.fallbackSnoozeMinutes (a
+    // literal — App Intents parameter defaults must be constant).
+    @Parameter(title: "Minutes", default: 9) public var minutes: Int
     @Dependency public var engine: BadgerEngine
 
     public init() {}
-    public init(badgerID: UUID, minutes: Int = 15) {
+    public init(badgerID: UUID, minutes: Int = BadgerConfig.defaultSnoozeMinutes) {
         self.badger = BadgerEntity(id: badgerID)
         self.minutes = minutes
     }

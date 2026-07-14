@@ -29,8 +29,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     let debugProbeCeiling: (@Sendable () async -> Int)?
     #endif
 
-    /// App-wide default snooze until Settings exists (§16/D6, M7).
-    private let defaultSnooze: TimeInterval = 9 * 60
+    /// App-wide default snooze, sourced from the shared App-Group config so every
+    /// snooze surface agrees (code review #1). M7 Settings writes it (§16/D6); until
+    /// then it falls back to BadgerConfig.fallbackSnoozeMinutes.
+    private var defaultSnooze: TimeInterval { BadgerConfig.defaultSnoozeDuration }
 
     override init() {
         // Shared App-Group store (§4) so the widget/intents can read state later.
