@@ -18,14 +18,14 @@ import SwiftData
 /// Records the ambient Live-Activity calls the engine makes (no ActivityKit).
 actor RecordingLiveActivityController: LiveActivityControlling {
     enum Call: Equatable {
-        case start(badgerID: UUID, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
+        case start(badgerID: UUID, tint: String?, iconName: String?, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
         case update(badgerID: UUID, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
         case end(badgerID: UUID)
     }
     private(set) var calls: [Call] = []
-    func start(badgerID: UUID, title: String, phase: ActivityPhase,
+    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async {
-        calls.append(.start(badgerID: badgerID, phase: phase, level: level,
+        calls.append(.start(badgerID: badgerID, tint: tint, iconName: iconName, phase: phase, level: level,
                             totalLevels: totalLevels, nextFire: nextFire))
     }
     func update(badgerID: UUID, phase: ActivityPhase,
@@ -66,8 +66,18 @@ struct EngineLiveActivityTests {
         let rec = RecordingLiveActivityController()
         let engine = try makeEngine(rec, now: { self.at(0) })
         let id = await engine.create(title: "t", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
-        #expect(await rec.calls == [.start(badgerID: id, phase: .armed, level: 0,
+        #expect(await rec.calls == [.start(badgerID: id, tint: "accent", iconName: nil, phase: .armed, level: 0,
                                            totalLevels: 3, nextFire: at(0))])
+    }
+
+    @Test("create forwards the Badger's tint + icon to the ambient activity (code review #6)")
+    func createForwardsTintAndIcon() async throws {
+        let rec = RecordingLiveActivityController()
+        let engine = try makeEngine(rec, now: { self.at(0) })
+        let id = await engine.create(title: "t", startAt: at(0), rungs: ladder, maxSnoozeCount: 1,
+                                     tint: "teal", iconName: "pills.fill")
+        #expect(await rec.calls == [.start(badgerID: id, tint: "teal", iconName: "pills.fill",
+                                           phase: .armed, level: 0, totalLevels: 3, nextFire: at(0))])
     }
 
     @Test("escalating fires advance the card's level + nextFire")

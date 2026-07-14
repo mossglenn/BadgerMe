@@ -19,7 +19,7 @@ import Foundation
 
 /// Manages a Badger's ambient Live Activity (§12). Per-Badger, keyed by id.
 protocol LiveActivityControlling: Sendable {
-    func start(badgerID: UUID, title: String, phase: ActivityPhase,
+    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async
     func update(badgerID: UUID, phase: ActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async
@@ -28,7 +28,7 @@ protocol LiveActivityControlling: Sendable {
 
 /// Stand-in used on macOS and until the real controller is wired (CP2b): does nothing.
 struct NoopLiveActivityController: LiveActivityControlling {
-    func start(badgerID: UUID, title: String, phase: ActivityPhase,
+    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async {}
     func update(badgerID: UUID, phase: ActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async {}

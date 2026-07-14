@@ -302,6 +302,7 @@ public final class BadgerEngine {
             case .startLiveActivity(let phase, let nextFire):
                 // level 0 = armed, before rung 0 fires; totalLevels from the bound ladder.
                 await liveActivity.start(badgerID: badger.id, title: badger.title,
+                                         tint: badger.tint, iconName: badger.iconName,
                                          phase: phase, level: 0,
                                          totalLevels: ctx.rungs.count, nextFire: nextFire)
             case .updateLiveActivity(let phase, let level, let nextFire):

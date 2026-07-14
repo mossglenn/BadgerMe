@@ -24,7 +24,7 @@ struct BadgerMeWidgetLiveActivity: Widget {
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: ambientIcon(context))
-                        .foregroundStyle(context.isStale ? .orange : .accentColor)
+                        .foregroundStyle(escalationTint(context))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     AmbientCountdown(context: context).font(.title3.monospacedDigit())
@@ -41,12 +41,12 @@ struct BadgerMeWidgetLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: ambientIcon(context))
-                    .foregroundStyle(context.isStale ? .orange : .accentColor)
+                    .foregroundStyle(escalationTint(context))
             } compactTrailing: {
                 AmbientCountdown(context: context).monospacedDigit()
             } minimal: {
                 Image(systemName: ambientIcon(context))
-                    .foregroundStyle(context.isStale ? .orange : .accentColor)
+                    .foregroundStyle(escalationTint(context))
             }
         }
     }
@@ -59,7 +59,7 @@ private struct AmbientLockScreenView: View {
             HStack(spacing: 12) {
                 Image(systemName: ambientIcon(context))
                     .font(.title2)
-                    .foregroundStyle(context.isStale ? .orange : .accentColor)
+                    .foregroundStyle(escalationTint(context))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(context.attributes.title).font(.headline).lineLimit(1)
                     Text(ambientStatusLine(context)).font(.subheadline).foregroundStyle(.secondary)
@@ -130,7 +130,7 @@ private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes
     case .done:    return "checkmark.circle.fill"
     case .stopped: return "xmark.circle.fill"
     case .snoozed: return "moon.zzz.fill"
-    default:       return "bell.badge.fill"
+    default:       return context.attributes.iconName ?? "bell.badge.fill"   // the Badger SF Symbol
     }
 }
 
@@ -153,5 +153,50 @@ private func isEscalating(_ phase: BadgerActivityAttributes.Phase) -> Bool {
     switch phase {
     case .armed, .escalating, .repeating, .overdue: return true
     case .snoozed, .done, .stopped:                 return false
+    }
+}
+
+// MARK: - Escalation color (§16, code review #6)
+
+/// The ambient card icon color: the Badger's identity tint at rest, warming to orange
+/// mid-ladder and hot red at the repeating tail; muted grey when snoozed or terminal;
+/// orange when the system has flipped the card to overdue. Keeps per-Badger identity
+/// rather than overriding it with a per-rung rainbow.
+private func escalationTint(_ context: ActivityViewContext<BadgerActivityAttributes>) -> Color {
+    let s = context.state
+    if context.isStale, isEscalating(s.phase) { return .orange }          // overdue warning
+    switch s.phase {
+    case .snoozed, .done, .stopped: return .gray                          // muted
+    case .repeating:                return .red                           // hottest / insistent
+    case .armed:                    return resolveTint(context.attributes.tint)
+    case .escalating, .overdue:
+        return escalatingHeat(level: s.currentLevelIndex, total: s.totalLevels,
+                              base: resolveTint(context.attributes.tint))
+    }
+}
+
+/// Cool-to-warm ramp across the escalating rungs; the repeating tail is red (handled above).
+private func escalatingHeat(level: Int, total: Int, base: Color) -> Color {
+    guard total > 1 else { return base }                                  // single-rung: no ramp
+    return Double(level) / Double(total - 1) < 0.5 ? base : .orange
+}
+
+/// Resolve a Badger tint token (accent, red, teal, ...) to a Color; unknown -> app accent.
+private func resolveTint(_ token: String?) -> Color {
+    switch token {
+    case "red":          return .red
+    case "orange":       return .orange
+    case "yellow":       return .yellow
+    case "green":        return .green
+    case "mint":         return .mint
+    case "teal":         return .teal
+    case "cyan":         return .cyan
+    case "blue":         return .blue
+    case "indigo":       return .indigo
+    case "purple":       return .purple
+    case "pink":         return .pink
+    case "brown":        return .brown
+    case "gray", "grey": return .gray
+    default:             return .accentColor
     }
 }

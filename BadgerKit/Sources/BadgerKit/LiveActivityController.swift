@@ -18,7 +18,7 @@ import ActivityKit
 
 struct LiveActivityController: LiveActivityControlling {
 
-    func start(badgerID: UUID, title: String, phase: ActivityPhase,
+    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         // If one is somehow already live for this Badger, update rather than duplicate.
@@ -27,7 +27,7 @@ struct LiveActivityController: LiveActivityControlling {
                          totalLevels: totalLevels, nextFire: nextFire)
             return
         }
-        let attributes = BadgerActivityAttributes(badgerID: badgerID, title: title)
+        let attributes = BadgerActivityAttributes(badgerID: badgerID, title: title, tint: tint, iconName: iconName)
         let content = ActivityContent(
             state: contentState(phase: phase, level: level, totalLevels: totalLevels, nextFire: nextFire),
             staleDate: nextFire)   // §12: staleDate == nextFireDate → system flips to stale
