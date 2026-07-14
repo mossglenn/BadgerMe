@@ -311,7 +311,7 @@ public final class BadgerEngine {
             case .endLiveActivity:
                 // Terminal beat (§16, code review #7): done/stopped hold briefly before clearing;
                 // a non-terminal teardown (e.g. delete) passes nil for immediate dismissal.
-                let terminalPhase: ActivityPhase?
+                let terminalPhase: BadgerActivityPhase?
                 switch state.status {
                 case .done:    terminalPhase = .done
                 case .stopped: terminalPhase = .stopped

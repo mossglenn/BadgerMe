@@ -12,9 +12,10 @@
 
 import Foundation
 
-/// The ambient Live Activity's presentation phase (§12). Mirrors the reducer's internal
-/// `ActivityPhase`; the controller maps onto this when it builds ContentState. `overdue` is
-/// presentation-only — the widget applies it when the activity goes stale, never emitted.
+/// The ambient Live Activity's presentation phase (§12) — one enum end to end after code
+/// review #3: the reducer emits it directly and the controller sets it straight onto
+/// ContentState (no translation). `overdue` is presentation-only — the widget applies it
+/// when the activity goes stale, never emitted.
 public enum BadgerActivityPhase: String, Codable, Hashable, Sendable {
     case armed, escalating, repeating, snoozed, done, stopped, overdue
 }

@@ -3,8 +3,9 @@
 //  BadgerKit — the real ambient Live Activity controller (§12, M5 CP2b).
 //
 //  Drives the per-Badger BadgerActivityAttributes activity via ActivityKit. Internal +
-//  guarded #if os(iOS): ActivityPhase is internal to the locked core, so this can't be a
-//  public conformer — instead BadgerEngine defaults to it on iOS (the app never names it).
+//  guarded #if os(iOS). It renders the public `BadgerActivityPhase` the reducer emits — no
+//  phase translation — and BadgerEngine defaults to it on iOS (the app never names it; a
+//  composition-root injection is the code-review #9 follow-up).
 //  Stateless: it locates the live activity by matching attributes.badgerID in
 //  Activity.activities, so it needs no stored handles and no ModelContainer. The ambient
 //  activity is best-effort polish (§12) — every ActivityKit call is guarded/try? and
@@ -18,7 +19,7 @@ import ActivityKit
 
 struct LiveActivityController: LiveActivityControlling {
 
-    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
+    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: BadgerActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         // If one is somehow already live for this Badger, update rather than duplicate.
@@ -34,7 +35,7 @@ struct LiveActivityController: LiveActivityControlling {
         _ = try? Activity.request(attributes: attributes, content: content)
     }
 
-    func update(badgerID: UUID, phase: ActivityPhase,
+    func update(badgerID: UUID, phase: BadgerActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async {
         guard let activity = activity(for: badgerID) else { return }
         let content = ActivityContent(
@@ -43,7 +44,7 @@ struct LiveActivityController: LiveActivityControlling {
         await activity.update(content)
     }
 
-    func end(badgerID: UUID, terminalPhase: ActivityPhase?) async {
+    func end(badgerID: UUID, terminalPhase: BadgerActivityPhase?) async {
         guard let activity = activity(for: badgerID) else { return }
         guard let terminalPhase else {
             await activity.end(using: nil, dismissalPolicy: .immediate)   // delete / non-terminal teardown
@@ -61,23 +62,12 @@ struct LiveActivityController: LiveActivityControlling {
         Activity<BadgerActivityAttributes>.activities.first { $0.attributes.badgerID == badgerID }
     }
 
-    private func contentState(phase: ActivityPhase, level: Int, totalLevels: Int,
+    private func contentState(phase: BadgerActivityPhase, level: Int, totalLevels: Int,
                               nextFire: Date?) -> BadgerActivityAttributes.ContentState {
         BadgerActivityAttributes.ContentState(
             currentLevelIndex: level, totalLevels: totalLevels,
-            nextFireDate: nextFire, phase: mapPhase(phase))
+            nextFireDate: nextFire, phase: phase)
     }
 
-    private func mapPhase(_ p: ActivityPhase) -> BadgerActivityAttributes.Phase {
-        switch p {
-        case .armed:      return .armed
-        case .escalating: return .escalating
-        case .repeating:  return .repeating
-        case .snoozed:    return .snoozed
-        case .done:       return .done
-        case .stopped:    return .stopped
-        case .overdue:    return .overdue
-        }
-    }
 }
 #endif

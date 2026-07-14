@@ -120,13 +120,6 @@ struct LoggedEvent: Equatable {
 
 // MARK: - Effects (executed by the impure engine)
 
-/// The ambient Live Activity phase (§12). `overdue` is a stale treatment applied by
-/// the widget when `staleDate` passes without an update; the reducer emits the
-/// logical phase and lets the presentation handle staleness.
-enum ActivityPhase: String, Equatable {
-    case armed, escalating, repeating, snoozed, done, stopped, overdue
-}
-
 enum Effect: Equatable {
     case append(LoggedEvent)
     /// Arm every rung >= `fromLevel` plus the last-rung repeat. Concrete fire dates
@@ -135,8 +128,8 @@ enum Effect: Equatable {
     case armSchedule(fromLevel: Int)
     case cancelAllPending
     case armWake(at: Date)
-    case startLiveActivity(phase: ActivityPhase, nextFire: Date?)
-    case updateLiveActivity(phase: ActivityPhase, level: Int, nextFire: Date?)
+    case startLiveActivity(phase: BadgerActivityPhase, nextFire: Date?)
+    case updateLiveActivity(phase: BadgerActivityPhase, level: Int, nextFire: Date?)
     case endLiveActivity
 }
 
@@ -289,7 +282,7 @@ func reduce(_ state: MachineState, _ event: Event, _ ctx: Context) -> (MachineSt
             effects.append(.append(LoggedEvent(kind: .snoozeEscalated, level: resumeLevel, source: .system)))
         }
         effects.append(.armSchedule(fromLevel: resumeLevel))
-        let phase: ActivityPhase = (resumeLevel == last) ? .repeating : .escalating
+        let phase: BadgerActivityPhase = (resumeLevel == last) ? .repeating : .escalating
         effects.append(.updateLiveActivity(phase: phase, level: resumeLevel,
                                            nextFire: nextFire(forLevel: resumeLevel, startAt: s.startAt, ctx: ctx)))
         return (s, effects)
@@ -320,7 +313,7 @@ func reduce(_ state: MachineState, _ event: Event, _ ctx: Context) -> (MachineSt
     case .edited:
         guard !state.status.isTerminal else { return (state, []) }
         let k = currentLevel(state.status)
-        let phase: ActivityPhase
+        let phase: BadgerActivityPhase
         if state.status == .pending { phase = .armed }
         else if k == last { phase = .repeating }
         else { phase = .escalating }
@@ -350,7 +343,7 @@ private func advance(_ state: MachineState, to newLevel: Int, ctx: Context,
     var s = state
     s.status = .active(level: newLevel)
     s.snoozeCount = 0
-    let phase: ActivityPhase = (newLevel == ctx.lastLevel) ? .repeating : .escalating
+    let phase: BadgerActivityPhase = (newLevel == ctx.lastLevel) ? .repeating : .escalating
     let nf = nextFire(forLevel: newLevel, startAt: s.startAt, ctx: ctx)
     return (s, [
         .append(log),

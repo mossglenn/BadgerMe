@@ -49,10 +49,10 @@ public struct BadgerActivityAttributes: ActivityAttributes {
         }
     }
 
-    /// Presentation phase (§12). Mirrors the reducer's logical `ActivityPhase` (internal to
-    /// the locked core); the controller maps onto this when building ContentState. `overdue`
-    /// is presentation-only — the widget applies it when the activity goes stale
-    /// (`context.isStale`; staleDate rides on the ActivityContent, not ContentState), never emitted.
+    /// Alias to the single Foundation-only `BadgerActivityPhase` (in `AmbientPresentation.swift`)
+    /// that the reducer emits and this activity renders — one phase enum end to end (code
+    /// review #3). `overdue` is presentation-only: the widget applies it when the activity
+    /// goes stale (`context.isStale`), never emitted.
     public typealias Phase = BadgerActivityPhase
 }
 #endif

@@ -18,22 +18,22 @@ import SwiftData
 /// Records the ambient Live-Activity calls the engine makes (no ActivityKit).
 actor RecordingLiveActivityController: LiveActivityControlling {
     enum Call: Equatable {
-        case start(badgerID: UUID, tint: String?, iconName: String?, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
-        case update(badgerID: UUID, phase: ActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
-        case end(badgerID: UUID, terminalPhase: ActivityPhase?)
+        case start(badgerID: UUID, tint: String?, iconName: String?, phase: BadgerActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
+        case update(badgerID: UUID, phase: BadgerActivityPhase, level: Int, totalLevels: Int, nextFire: Date?)
+        case end(badgerID: UUID, terminalPhase: BadgerActivityPhase?)
     }
     private(set) var calls: [Call] = []
-    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: ActivityPhase,
+    func start(badgerID: UUID, title: String, tint: String?, iconName: String?, phase: BadgerActivityPhase,
                level: Int, totalLevels: Int, nextFire: Date?) async {
         calls.append(.start(badgerID: badgerID, tint: tint, iconName: iconName, phase: phase, level: level,
                             totalLevels: totalLevels, nextFire: nextFire))
     }
-    func update(badgerID: UUID, phase: ActivityPhase,
+    func update(badgerID: UUID, phase: BadgerActivityPhase,
                 level: Int, totalLevels: Int, nextFire: Date?) async {
         calls.append(.update(badgerID: badgerID, phase: phase, level: level,
                              totalLevels: totalLevels, nextFire: nextFire))
     }
-    func end(badgerID: UUID, terminalPhase: ActivityPhase?) async { calls.append(.end(badgerID: badgerID, terminalPhase: terminalPhase)) }
+    func end(badgerID: UUID, terminalPhase: BadgerActivityPhase?) async { calls.append(.end(badgerID: badgerID, terminalPhase: terminalPhase)) }
 
     var updates: [Call] { calls.filter { if case .update = $0 { return true } else { return false } } }
 }
