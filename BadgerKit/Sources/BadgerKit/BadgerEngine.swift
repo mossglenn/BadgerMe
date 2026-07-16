@@ -144,6 +144,19 @@ public final class BadgerEngine {
         return snapshot(of: badger)
     }
 
+    /// Undo a completed Badger (CP5, §11): reverse UserMarkedDone, restoring `active(toLevel)`,
+    /// re-arming from that rung and restarting the ambient card. `toLevel` defaults to the
+    /// preserved `currentLevel` (apply(.done) leaves it intact) — where the Badger was when
+    /// resolved. No-op unless `.done` (the reducer guards `.reopen`). Backs UndoableIntent (CP5).
+    @discardableResult
+    public func reopenDone(_ id: UUID, toLevel: Int? = nil) async -> BadgerSnapshot? {
+        guard let badger = fetch(id) else { return nil }
+        let level = toLevel ?? badger.currentLevel
+        await dispatch(.reopen(toLevel: level), to: badger)
+        await indexInSpotlight(id)
+        return snapshot(of: badger)
+    }
+
     /// Edit a live Badger (D2 baseline: title/notes freely; a schedule change re-arms).
     /// Any nil argument leaves that field unchanged. The model is mutated BEFORE
     /// dispatching `.edited`, so the reducer's cancel + re-arm-from-current-level runs
@@ -297,11 +310,12 @@ public final class BadgerEngine {
                 badger.armedAlarms = []            // clear only after teardown returns
             case .armWake(let date):
                 await armWake(at: date, badger: badger)
-            case .startLiveActivity(let phase, let nextFire):
-                // level 0 = armed, before rung 0 fires; totalLevels from the bound ladder.
+            case .startLiveActivity(let phase, let level, let nextFire):
+                // Genesis (created/replace) starts at level 0 = armed; undo (reopen) starts at the
+                // restored level. totalLevels from the bound ladder (the effect doesn't carry it).
                 await liveActivity.start(badgerID: badger.id, title: badger.title,
                                          tint: badger.tint, iconName: badger.iconName,
-                                         phase: phase, level: 0,
+                                         phase: phase, level: level,
                                          totalLevels: ctx.rungs.count, nextFire: nextFire)
             case .updateLiveActivity(let phase, let level, let nextFire):
                 await liveActivity.update(badgerID: badger.id, phase: phase, level: level,

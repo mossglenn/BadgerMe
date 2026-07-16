@@ -101,13 +101,14 @@ enum Event: Equatable {
     case snoozeExpired
     case userStopped
     case replace(startAt: Date)                   // re-run a terminal Badger (D12)
+    case reopen(toLevel: Int)                     // undo a Done — reopen at the recorded level (CP5)
     case deleted
 }
 
 enum EventKind: String, Equatable {
     case created, edited, armed, levelFired, lastRungRepeated, alarmDismissed
     case notificationDelivered, userMarkedDone, userSnoozed, snoozeResumed
-    case snoozeEscalated, userStopped, replaced, deleted, reconciled
+    case snoozeEscalated, userStopped, replaced, deleted, reconciled, reopened
 }
 
 /// A row destined for the append-only Event log (§7).
@@ -128,7 +129,7 @@ enum Effect: Equatable {
     case armSchedule(fromLevel: Int)
     case cancelAllPending
     case armWake(at: Date)
-    case startLiveActivity(phase: BadgerActivityPhase, nextFire: Date?)
+    case startLiveActivity(phase: BadgerActivityPhase, level: Int, nextFire: Date?)
     case updateLiveActivity(phase: BadgerActivityPhase, level: Int, nextFire: Date?)
     case endLiveActivity
 }
@@ -197,7 +198,7 @@ func reduce(_ state: MachineState, _ event: Event, _ ctx: Context) -> (MachineSt
             .append(LoggedEvent(kind: .created, source: .userAction)),
             .append(LoggedEvent(kind: .armed, source: .system)),
             .armSchedule(fromLevel: 0),
-            .startLiveActivity(phase: .armed, nextFire: nf),
+            .startLiveActivity(phase: .armed, level: 0, nextFire: nf),
         ])
 
     // A base rung reached its fire time (observed live or inferred on reconcile).
@@ -304,7 +305,27 @@ func reduce(_ state: MachineState, _ event: Event, _ ctx: Context) -> (MachineSt
         return (s, [
             .append(LoggedEvent(kind: .replaced, source: .userAction)),
             .armSchedule(fromLevel: 0),
-            .startLiveActivity(phase: .armed, nextFire: nf),
+            .startLiveActivity(phase: .armed, level: 0, nextFire: nf),
+        ])
+
+    // Undo a completed Badger (CP5, §11): reverse UserMarkedDone. Only from `.done`
+    // (Stop is a separate, non-undoable terminal). Restores `active(toLevel)`, re-anchors
+    // `startAt` so the restored rung is "now" (mirroring snoozeExpired), re-arms from that
+    // level, and STARTS a fresh ambient activity (the prior one ended on Done). The engine
+    // supplies `toLevel` from the Badger's preserved `currentLevel`.
+    case .reopen(let toLevel):
+        guard case .done = state.status else { return (state, []) }
+        let level = max(0, min(toLevel, last))
+        var s = state
+        s.startAt = ctx.now.addingTimeInterval(-ctx.rungs[level].delay)
+        s.status = .active(level: level)
+        s.snoozeCount = 0
+        let phase: BadgerActivityPhase = (level == last) ? .repeating : .escalating
+        return (s, [
+            .append(LoggedEvent(kind: .reopened, level: level, source: .userAction)),
+            .armSchedule(fromLevel: level),
+            .startLiveActivity(phase: phase, level: level,
+                               nextFire: nextFire(forLevel: level, startAt: s.startAt, ctx: ctx)),
         ])
 
     // D2 OPEN: this is the permissive "edit freely, cancel + re-arm from the current

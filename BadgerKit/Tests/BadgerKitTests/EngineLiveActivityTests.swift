@@ -137,4 +137,25 @@ struct EngineLiveActivityTests {
         #expect(await rec.updates.last == .update(badgerID: id, phase: .repeating, level: 2,
                                                   totalLevels: 3, nextFire: at(420)))
     }
+
+    @Test("undo (reopenDone) restarts the ambient card at the preserved level")
+    func reopenRestartsCard() async throws {
+        var clock = at(0)
+        let rec = RecordingLiveActivityController()
+        let engine = try makeEngine(rec, now: { clock })
+        let id = await engine.create(title: "t", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        await engine.handleChannelEvent(.levelFired(badgerID: id, rung: 0))          // active(0)
+        clock = at(60);  await engine.handleChannelEvent(.levelFired(badgerID: id, rung: 1))  // active(1)
+        clock = at(90);  await engine.markDone(id)                                   // done; currentLevel preserved (1)
+        #expect(await rec.calls.last == .end(badgerID: id, terminalPhase: .done))
+
+        // Undo at +200: reopenDone defaults toLevel to the preserved currentLevel (1).
+        // startAt' = 200 − rung1.delay(60) = 140; next rung(2) fires at 140 + 180 = 320.
+        clock = at(200)
+        let snap = await engine.reopenDone(id)
+        #expect(await rec.calls.last == .start(badgerID: id, tint: "accent", iconName: nil,
+                                               phase: .escalating, level: 1, totalLevels: 3, nextFire: at(320)))
+        #expect(snap?.state == .active)
+        #expect(snap?.currentLevel == 1)
+    }
 }

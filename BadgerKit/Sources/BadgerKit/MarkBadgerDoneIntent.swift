@@ -1,6 +1,6 @@
 //
 //  MarkBadgerDoneIntent.swift
-//  BadgerKit — the resolve-from-alarm / catalog "mark done" App Intent (M4, §11).
+//  BadgerKit — the resolve-from-alarm / catalog "mark done" App Intent (M4, §11; undo M5 CP5).
 //
 //  AlarmKit's AlarmConfiguration.secondaryIntent is `(any LiveActivityIntent)?` (verified
 //  against the 26.5 .swiftinterface), and LiveActivityIntents run IN the app process,
@@ -23,7 +23,8 @@ import Foundation
 #if os(iOS)
 import AppIntents
 
-public struct MarkBadgerDoneIntent: LiveActivityIntent {
+@available(iOS 26.0, *)   // UndoableIntent (CP5 undo) is iOS 26; BadgerKit's floor is v18
+public struct MarkBadgerDoneIntent: LiveActivityIntent, UndoableIntent {
     public static let title: LocalizedStringResource = "Mark Badger Done"
 
     @Parameter(title: "Badger") public var badger: BadgerEntity
@@ -36,6 +37,19 @@ public struct MarkBadgerDoneIntent: LiveActivityIntent {
 
     public func perform() async throws -> some IntentResult {
         await engine.markDone(badger.id)
+        // CP5 undo (§11): where the runtime supplies an undo manager (Shortcuts / Siri),
+        // register a reopen. `reopenDone` defaults to the Badger's preserved `currentLevel`,
+        // so undo restores the ladder to where Done was tapped. `undoManager` is nil in the
+        // Live-Activity / alarm-button contexts — optional-chaining makes this a no-op there.
+        await MainActor.run {
+            guard let undoManager else { return }
+            let engine = self.engine
+            let id = self.badger.id
+            undoManager.registerUndo(withTarget: engine) { engine in
+                Task { await engine.reopenDone(id) }
+            }
+            undoManager.setActionName("Mark Done")
+        }
         return .result()
     }
 }

@@ -50,7 +50,7 @@ struct BadgerReducerTests {
         #expect(fx.contains(.append(LoggedEvent(kind: .created, source: .userAction))))
         #expect(fx.contains(.append(LoggedEvent(kind: .armed, source: .system))))
         #expect(fx.contains(.armSchedule(fromLevel: 0)))
-        #expect(fx.contains(.startLiveActivity(phase: .armed, nextFire: at(0))))  // rung0 @ +0
+        #expect(fx.contains(.startLiveActivity(phase: .armed, level: 0, nextFire: at(0))))  // rung0 @ +0
 
         // 2. Rung 0 fires at T0 → active(0); countdown now targets rung1 (+60).
         (st, fx) = reduce(st, .levelFired(level: 0, source: .observed), ctx(0))
@@ -279,5 +279,62 @@ struct BadgerReducerTests {
     func reconcileNoOpWhenNothingDue() {
         let st = MachineState(status: .pending, startAt: at(1000), snoozeCount: 0)
         #expect(catchUpEvents(for: st, ctx: ctx(0)).isEmpty)   // starts in the future
+    }
+
+    // MARK: - Undo / reopen (CP5, §11 — reverse UserMarkedDone)
+
+    @Test("Undo reopens a done Badger to the recorded level, re-arms, and restarts the activity")
+    func reopenRestoresDone() {
+        let done = MachineState(status: .done, startAt: at(0), snoozeCount: 0)
+        let (out, fx) = reduce(done, .reopen(toLevel: 1), ctx(1000))
+        #expect(out.status == .active(level: 1))
+        #expect(out.startAt == at(940))                          // 1000 − rung1.delay(60)
+        #expect(out.snoozeCount == 0)
+        #expect(fx.contains(.append(LoggedEvent(kind: .reopened, level: 1, source: .userAction))))
+        #expect(fx.contains(.armSchedule(fromLevel: 1)))
+        #expect(fx.contains(.startLiveActivity(phase: .escalating, level: 1, nextFire: at(1120))))
+    }
+
+    @Test("Undo at the last rung restores the repeating phase")
+    func reopenAtLastRungRepeats() {
+        let done = MachineState(status: .done, startAt: at(0), snoozeCount: 0)
+        let (out, fx) = reduce(done, .reopen(toLevel: 2), ctx(1000))
+        #expect(out.status == .active(level: 2))
+        #expect(out.startAt == at(820))                          // 1000 − rung2.delay(180)
+        #expect(fx.contains(.startLiveActivity(phase: .repeating, level: 2, nextFire: at(1120))))
+    }
+
+    @Test("Undo (reopen) only applies to a done Badger; no-op otherwise (incl. stopped)")
+    func reopenIgnoredWhenNotDone() {
+        for st in [
+            MachineState(status: .active(level: 1), startAt: at(0), snoozeCount: 0),
+            MachineState(status: .pending, startAt: at(0), snoozeCount: 0),
+            MachineState(status: .stopped, startAt: at(0), snoozeCount: 0),
+        ] {
+            let (out, fx) = reduce(st, .reopen(toLevel: 1), ctx(100))
+            #expect(out == st)
+            #expect(fx.isEmpty)
+        }
+    }
+
+    @Test("Undo clamps the restore level into the ladder bounds")
+    func reopenClampsLevel() {
+        let done = MachineState(status: .done, startAt: at(0), snoozeCount: 0)
+        let (hi, _) = reduce(done, .reopen(toLevel: 99), ctx(500))
+        #expect(hi.status == .active(level: 2))                  // clamped to the last rung (2)
+        let (lo, _) = reduce(done, .reopen(toLevel: -5), ctx(500))
+        #expect(lo.status == .active(level: 0))                  // clamped to 0
+    }
+
+    @Test("Done then undo returns to escalating at the recorded level")
+    func doneThenReopenRoundTrip() {
+        var st = MachineState(status: .active(level: 1), startAt: at(0), snoozeCount: 0)
+        (st, _) = reduce(st, .userMarkedDone, ctx(100))
+        #expect(st.status == .done)
+        let (out, fx) = reduce(st, .reopen(toLevel: 1), ctx(120))
+        #expect(out.status == .active(level: 1))
+        #expect(out.startAt == at(60))                           // 120 − rung1.delay(60)
+        #expect(fx.contains(.armSchedule(fromLevel: 1)))
+        #expect(fx.contains(.startLiveActivity(phase: .escalating, level: 1, nextFire: at(240))))
     }
 }
