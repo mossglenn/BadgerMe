@@ -324,4 +324,52 @@ struct EngineTests {
         #expect(b.state == .pending)
         #expect(eventKinds(id, c).contains(.alarmDismissed))
     }
+
+    // MARK: - M6 CP1: reconcile replenishment + re-arm
+
+    @Test("reconcile replenishes the alarmkit repeat batch and prunes consumed refs")
+    func reconcileReplenishesAlarmBatch() async throws {
+        var clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeAlarmChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 4, now: { clock })
+        // alarmLadder: rung0 @0, rung1 @60 (last). interval 60, firstLastFire 60; rep n @ 60+n*60.
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+
+        func repNs(_ b: Badger) -> Set<Int> {
+            Set(b.armedAlarms.compactMap { if case .repeatTail(_, let n) = $0.slot { return n } else { return nil } })
+        }
+        #expect(repNs(try #require(fetchBadger(id, c))) == [1, 2, 3, 4])   // initial batch
+
+        // Jump past repeats 1(@120),2(@180),3(@240); next future occurrence is n=4(@300).
+        clock = at(250)
+        await engine.reconcile(id)
+
+        let b = try #require(fetchBadger(id, c))
+        #expect(b.currentLevel == 1)                       // caught up to the last rung
+        #expect(repNs(b) == [4, 5, 6, 7])                  // 1–3 pruned, topped up to the next 4
+    }
+
+    @Test("reconcile replenishes the notification repeat batch by deterministic id (idempotent)")
+    func reconcileReplenishesNotificationBatch() async throws {
+        var clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeChannel()   // id "notification"
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 4, now: { clock })
+        // ladder last = rung2 @180. interval 120, firstLastFire 180; rep n @ 180+n*120.
+        let id = await engine.create(title: "x", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+
+        // now 700 → repeats 1(@300)…4(@660) past; next future window is n=5…8.
+        clock = at(700)
+        await engine.reconcile(id)
+
+        let scheduledReps = await fake.scheduled.compactMap {
+            if case .repeatTail(_, let n) = $0.slot { return n } else { return nil }
+        }
+        #expect(Set(scheduledReps).isSuperset(of: [5, 6, 7, 8]))   // topped-up window re-armed
+        #expect(try #require(fetchBadger(id, c)).currentLevel == 2)
+        #expect(try #require(fetchBadger(id, c)).armedAlarms.isEmpty)  // notifications aren't persisted
+    }
 }

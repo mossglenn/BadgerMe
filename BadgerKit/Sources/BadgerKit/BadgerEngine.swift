@@ -32,7 +32,7 @@ public final class BadgerEngine {
 
     /// Per-Badger repeat batch size for a soft last rung (§10). Bounded by the
     /// 64-pending-per-app budget shared across ~D3 concurrent Badgers; the batch is
-    /// replenished on reconcile (M6). SP3: never a single recurring notification.
+    /// replenished on reconcile (M6 CP1, `ensureArmed`). SP3: never a single recurring notification.
     private let repeatBatchSize: Int
 
     private var context: ModelContext { container.mainContext }
@@ -119,8 +119,9 @@ public final class BadgerEngine {
     /// A notification fired while the app is foreground: advance that Badger now.
     public func handleForegroundDelivery(badgerID: UUID) async { await reconcile(badgerID) }
 
-    /// Foreground catch-up over all live Badgers (§14; basic — full replenish/restart
-    /// handling is M6). Uses the same pure reconcile the reducer defines.
+    /// Foreground catch-up over all live Badgers (§14). Uses the same pure reconcile the
+    /// reducer defines; `runReconcile` then calls `ensureArmed` to replenish the repeat
+    /// batch and re-assert future slots (M6 CP1). (AlarmKit OS-drop re-arm rides on CP2.)
     public func reconcileAll() async {
         let all = (try? context.fetch(FetchDescriptor<Badger>())) ?? []
         for badger in all where !isTerminal(badger.state) { await runReconcile(on: badger) }
@@ -289,6 +290,7 @@ public final class BadgerEngine {
         apply(newState, to: badger)
         stampResolved(newState, on: badger, at: ctx.now)
         await execute(effects, for: badger, state: newState, context: ctx)
+        await ensureArmed(badger: badger, state: newState, ctx: ctx)   // §14 replenish + re-arm (M6 CP1)
         try? context.save()
     }
 
@@ -370,6 +372,65 @@ public final class BadgerEngine {
                     }
                 }
             }
+        }
+    }
+
+    /// Replenish the bounded last-rung repeat batch and re-assert future rungs after a
+    /// reconcile (§14, M6 CP1). Idempotent: arms only future slots not already armed —
+    /// AlarmKit dedups against the persisted `armedAlarms` (its ids are non-deterministic);
+    /// notification re-arms are idempotent by their deterministic identifier (`add`
+    /// replaces, preserving the absolute fire date). Consumed repeat refs are pruned so
+    /// `armedAlarms` stays bounded across a long-lived repeating Badger. (Detecting an
+    /// AlarmKit alarm the OS *dropped* while its ref persists needs CP2's system sweep.)
+    private func ensureArmed(badger: Badger, state: MachineState, ctx: Context) async {
+        guard !state.status.isTerminal else { return }
+        guard let specs = badger.ladder?.rungs.sorted(by: { $0.index < $1.index }),
+              !specs.isEmpty else { return }
+
+        let desired = forwardSlots(state: state, ctx: ctx, repeatBatchSize: repeatBatchSize)
+
+        // Prune AlarmKit refs for repeat occurrences no longer in the desired window
+        // (already fired) so the array can't grow without bound while repeating.
+        let desiredRepeatNs = Set(desired.compactMap { slot -> Int? in
+            if case .repeatTail(_, let n) = slot { return n } else { return nil }
+        })
+        badger.armedAlarms.removeAll { ref in
+            if case .repeatTail(_, let n) = ref.slot { return !desiredRepeatNs.contains(n) }
+            return false
+        }
+
+        let armed = Set(badger.armedAlarms.map(\.slot))
+        for slot in desired {
+            let rungIndex: Int
+            switch slot {
+            case .rung(let k):             rungIndex = k
+            case .repeatTail(let rung, _): rungIndex = rung
+            case .wake:                    continue
+            }
+            guard rungIndex < specs.count else { continue }
+            let fire = slotFireDate(slot, startAt: state.startAt, rungs: ctx.rungs)
+            for action in specs[rungIndex].actions {
+                guard let channel = registry.channel(for: action.channelID) else { continue }
+                if channel.id == "alarmkit", armed.contains(slot) { continue }   // already armed
+                if let ref = await schedule(resolve(action, for: badger), at: fire,
+                                            badgerID: badger.id, slot: slot),
+                   ref.channelID == "alarmkit" {
+                    badger.armedAlarms.append(ArmedRef(id: ref.identifier, slot: slot))
+                }
+            }
+        }
+    }
+
+    /// Fire date for a specific slot off a (possibly re-anchored) startAt.
+    private func slotFireDate(_ slot: ScheduleSlot, startAt: Date, rungs: [Rung]) -> Date {
+        switch slot {
+        case .rung(let k):
+            return fireDate(level: k, startAt: startAt, rungs: rungs)
+        case .repeatTail(let rung, let n):
+            let firstLastFire = fireDate(level: rung, startAt: startAt, rungs: rungs)
+            return firstLastFire.addingTimeInterval(Double(n) * repeatInterval(rungs: rungs))
+        case .wake:
+            return startAt
         }
     }
 
