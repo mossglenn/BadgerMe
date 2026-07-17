@@ -76,6 +76,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // prior-process alarm firing is attributed after a relaunch (M3 cold-kill fix, ckpt 4).
         Task { @MainActor in
             await engine.rehydrateArmedAlarms()
+            await engine.sweepStrayAlerts()   // cancel crash-window orphans no live Badger owns (M6 CP2)
             engine.startObserving()   // consume AlarmKit's live lifecycle stream (§14 path 1)
         }
         return true

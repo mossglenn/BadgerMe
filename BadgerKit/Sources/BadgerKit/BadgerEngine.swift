@@ -254,6 +254,35 @@ public final class BadgerEngine {
         }
     }
 
+    /// App-global backstop (§14 Part B, M6 CP2): cancel every system alarm/notification the app
+    /// scheduled that no live (non-terminal) Badger still owns — crash-window orphans, a row
+    /// deleted out from under its refs, AlarmKit id drift, or an alarm the OS dropped. Runs at
+    /// launch AFTER `rehydrateArmedAlarms()` (owner maps populated) and BEFORE `startObserving()`.
+    /// Attribution differs by channel: AlarmKit ids are opaque UUIDs matched against live Badgers'
+    /// persisted `armedAlarms`; notification ids self-describe their Badger in the `badger-{uuid}-`
+    /// namespace. Cancellation is best-effort (a gone id is harmless), so a mis-flagged "stray"
+    /// could only ever over-cancel an id no live Badger owns anyway.
+    public func sweepStrayAlerts() async {
+        let all = (try? context.fetch(FetchDescriptor<Badger>())) ?? []
+        let live = all.filter { !isTerminal($0.state) }
+        let liveBadgerIDs = Set(live.map(\.id))
+        let ownedAlarmIDs = Set(live.flatMap { $0.armedAlarms.map(\.id) })
+
+        for channel in registry.allChannels {
+            let system = await channel.scheduledIdentifiers()
+            guard !system.isEmpty else { continue }
+            let strays: [String]
+            switch channel.id {
+            case "alarmkit":     strays = strayIdentifiers(system: system, owned: ownedAlarmIDs)
+            case "notification": strays = strayNotificationIdentifiers(system: system, liveBadgerIDs: liveBadgerIDs)
+            default:             continue
+            }
+            guard !strays.isEmpty else { continue }
+            await channel.cancel(identifiers: strays)
+            log("stray sweep cancelled \(strays.count) orphan(s) on '\(channel.id)'")
+        }
+    }
+
     /// Map a channel's observed transition to a reducer event (observed source): a
     /// fired alarm advances the level; a bare removal is a NON-resolving dismissal
     /// (§8/§14 — only an explicit Done resolves). Internal for deterministic testing.

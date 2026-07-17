@@ -46,6 +46,12 @@ actor FakeChannel: AlertChannel {
         cancelledAll.append(badgerID)
         scheduled.removeAll { $0.badgerID == badgerID }
     }
+    // CP2 stray sweep: a settable app-global system set + the enumerate/cancel hooks.
+    var systemIdentifiers: [String] = []
+    func setSystemIdentifiers(_ ids: [String]) { systemIdentifiers = ids }
+    func scheduledIdentifiers() async -> [String] { systemIdentifiers }
+    private(set) var cancelledIdentifiers: [String] = []
+    func cancel(identifiers: [String]) async { cancelledIdentifiers.append(contentsOf: identifiers) }
 
     var slots: [ScheduleSlot] { scheduled.map(\.slot) }
     var rungSlots: [Int] {
@@ -66,10 +72,17 @@ actor FakeAlarmChannel: AlertChannel {
 
     private(set) var scheduled: [ScheduleSlot] = []
     private(set) var cancelledIdentifiers: [String] = []
+    private(set) var issuedIdentifiers: [String] = []
+    // CP2 stray sweep: settable app-global system set the enumerate hook returns.
+    var systemIdentifiers: [String] = []
+    func setSystemIdentifiers(_ ids: [String]) { systemIdentifiers = ids }
+    func scheduledIdentifiers() async -> [String] { systemIdentifiers }
     func schedule(_ action: ChannelAction, at fireDate: Date, recurrence: ChannelRecurrence?,
                   badgerID: UUID, slot: ScheduleSlot) async throws -> ScheduledRef {
         scheduled.append(slot)
-        return ScheduledRef(channelID: id, identifier: UUID().uuidString, slot: slot)
+        let identifier = UUID().uuidString
+        issuedIdentifiers.append(identifier)
+        return ScheduledRef(channelID: id, identifier: identifier, slot: slot)
     }
     func cancel(_ ref: ScheduledRef) async {}
     func cancelAll(forBadgerID badgerID: UUID) async {}
@@ -371,5 +384,69 @@ struct EngineTests {
         #expect(Set(scheduledReps).isSuperset(of: [5, 6, 7, 8]))   // topped-up window re-armed
         #expect(try #require(fetchBadger(id, c)).currentLevel == 2)
         #expect(try #require(fetchBadger(id, c)).armedAlarms.isEmpty)  // notifications aren't persisted
+    }
+
+    // MARK: - M6 CP2: backstop stray sweep
+
+    @Test("sweep cancels a system alarm no live Badger owns, keeps owned ones")
+    func sweepCancelsUnownedAlarm() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeAlarmChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+
+        // The live Badger owns exactly the ids the fake issued at arm time; add an orphan the app
+        // scheduled but no live Badger claims (a crash-window / lost-row straggler).
+        let owned = await fake.issuedIdentifiers
+        let orphan = UUID().uuidString
+        await fake.setSystemIdentifiers(owned + [orphan])
+
+        await engine.sweepStrayAlerts()
+
+        #expect(await fake.cancelledIdentifiers == [orphan])                                // orphan swept
+        #expect(Set(try #require(fetchBadger(id, c)).armedAlarms.map(\.id)) == Set(owned))  // owned kept
+    }
+
+    @Test("sweep reaches an orphan of a resolved (terminal) Badger — the crash-window straggler")
+    func sweepClearsTerminalOrphan() async throws {
+        var clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeAlarmChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 2, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        clock = at(30)
+        await engine.markDone(id)                                  // terminal; armedAlarms cleared
+
+        let orphan = UUID().uuidString                             // a straggler teardown missed
+        #expect(!(await fake.cancelledIdentifiers.contains(orphan)))
+        await fake.setSystemIdentifiers([orphan])
+        await engine.sweepStrayAlerts()
+        #expect(await fake.cancelledIdentifiers.contains(orphan))
+    }
+
+    @Test("sweep cancels pending notifications of a dead Badger by namespace, keeps a live one")
+    func sweepNotificationNamespace() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let fake = FakeChannel()   // id "notification"
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([fake]),
+                                  repeatBatchSize: 2, now: { clock })
+        let liveID = await engine.create(title: "live", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        let deadID = UUID()   // a Badger whose row no longer exists
+
+        await fake.setSystemIdentifiers([
+            BadgerNotifications.identifier(badgerID: liveID, slot: .rung(0)),
+            BadgerNotifications.identifier(badgerID: deadID, slot: .rung(0)),
+            BadgerNotifications.identifier(badgerID: deadID, slot: .wake),
+        ])
+        await engine.sweepStrayAlerts()
+
+        #expect(Set(await fake.cancelledIdentifiers) == [
+            BadgerNotifications.identifier(badgerID: deadID, slot: .rung(0)),
+            BadgerNotifications.identifier(badgerID: deadID, slot: .wake),
+        ])
     }
 }

@@ -134,6 +134,16 @@ public actor AlarmKitChannel: AlertChannel {
         }
     }
 
+    /// App-global enumerate for the CP2 stray sweep: every alarm id this app currently has
+    /// scheduled. SDK-verified 2026-07-17 against the 26.5 .swiftinterface — `AlarmManager.alarms`
+    /// is a throwing pull getter (no need to snapshot the `alarmUpdates` stream) and `Alarm.id` is
+    /// the UUID we scheduled with. App-scoped by the system, so this is exactly the set the sweep
+    /// diffs against live Badgers' `armedAlarms`.
+    public func scheduledIdentifiers() async -> [String] {
+        let alarms = (try? AlarmManager.shared.alarms) ?? []
+        return alarms.map(\.id.uuidString)
+    }
+
     #if DEBUG
     /// Diagnostic (SP9/B1): arm minimal far-future alarms until the per-app limit throws,
     /// report the count reached, then cancel them all. Throwaway dev instrumentation —

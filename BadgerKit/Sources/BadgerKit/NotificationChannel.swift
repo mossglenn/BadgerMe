@@ -48,6 +48,15 @@ public enum BadgerNotifications {
         "badger-\(badgerID.uuidString)-"
     }
 
+    /// The owning Badger id encoded in a request identifier (`badger-{uuid}-…`), or nil if
+    /// `identifier` isn't one of ours. Inverse of `identifier(badgerID:slot:)`; the CP2 stray
+    /// sweep uses it to attribute a pending notification to a (possibly gone) Badger.
+    public static func badgerID(fromIdentifier identifier: String) -> UUID? {
+        let prefix = "badger-"
+        guard identifier.hasPrefix(prefix) else { return nil }
+        return UUID(uuidString: String(identifier.dropFirst(prefix.count).prefix(36)))
+    }
+
     /// Extract the owning Badger id from a delivered/response notification.
     public static func badgerID(from userInfo: [AnyHashable: Any]) -> UUID? {
         (userInfo["badgerID"] as? String).flatMap(UUID.init(uuidString:))
@@ -109,6 +118,16 @@ public struct NotificationChannel: AlertChannel {
             .filter { $0.hasPrefix(prefix) }
         center.removePendingNotificationRequests(withIdentifiers: pendingIDs)
         center.removeDeliveredNotifications(withIdentifiers: deliveredIDs)
+    }
+
+    /// App-global enumerate for the CP2 stray sweep: our pending request ids (namespace
+    /// `badger-`). Only pending (still-to-fire) requests count as "scheduled"; delivered tray
+    /// items are `cancelAll`'s concern. Foreign ids are filtered out so the sweep never touches
+    /// another app's or a system notification.
+    public func scheduledIdentifiers() async -> [String] {
+        await center.pendingNotificationRequests()
+            .map(\.identifier)
+            .filter { $0.hasPrefix("badger-") }
     }
 
     // MARK: - Mapping

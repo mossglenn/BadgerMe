@@ -114,6 +114,12 @@ public protocol AlertChannel: Sendable {
     /// relaunch (M3 cold-kill fix). Default: no-op (channels with no live owner map).
     func adopt(badgerID: UUID, refs: [ArmedRef]) async
 
+    /// Enumerate the platform identifiers this channel currently has scheduled in the
+    /// system (app-global), so a launch-time backstop sweep can cancel any that no live
+    /// Badger owns (M6 CP2). Default: empty — a channel that can't enumerate contributes
+    /// nothing and the sweep skips it.
+    func scheduledIdentifiers() async -> [String]
+
     /// Live transitions while the app runs, or nil if the channel isn't observable at
     /// fire (notifications; §9). AlarmKit returns a real stream in M3.
     func observe() -> AsyncStream<ChannelEvent>?
@@ -126,6 +132,10 @@ public extension AlertChannel {
 
     /// Default: no-op. Overridden by channels with a live owner map (AlarmKit).
     func adopt(badgerID: UUID, refs: [ArmedRef]) async {}
+
+    /// Default: empty. Overridden by channels that can enumerate their scheduled items
+    /// (AlarmKit via `AlarmManager.alarms`; notifications via pending requests).
+    func scheduledIdentifiers() async -> [String] { [] }
 }
 
 public extension AlertChannel {
