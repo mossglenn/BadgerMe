@@ -1,85 +1,117 @@
 //
 //  BadgerMeWidget.swift
-//  BadgerMeWidget
+//  BadgerMeWidget — home/lock-screen glance of what's badgering the user (§11, M6 CP3).
 //
-//  Created by Amos Glenn on 7/6/26.
+//  A StaticConfiguration widget (small + medium). Its TimelineProvider reads the shared
+//  App-Group store via BadgerKit's read-only BadgerWidgetReader (no engine in the widget
+//  process) and shows the active count + the most-urgent Badger with a fixed-target
+//  countdown and an inline Done (MarkBadgerDoneIntent runs in-app, headless). Refreshes when
+//  the soonest escalation passes so the count/most-urgent stay current.
 //
 
 import WidgetKit
 import SwiftUI
+import AppIntents
 import BadgerKit
 
-struct Provider: TimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), emoji: "😀")
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let entry = SimpleEntry(date: Date(), emoji: "😀")
-        completion(entry)
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, emoji: "😀")
-            entries.append(entry)
-        }
-
-        let timeline = Timeline(entries: entries, policy: .atEnd)
-        completion(timeline)
-    }
-
-//    func relevances() async -> WidgetRelevances<Void> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
-}
-
-struct SimpleEntry: TimelineEntry {
+struct BadgerWidgetEntry: TimelineEntry {
     let date: Date
-    let emoji: String
+    let summary: BadgerWidgetSummary
 }
 
-struct BadgerMeWidgetEntryView : View {
-    var entry: Provider.Entry
+struct BadgerWidgetProvider: TimelineProvider {
+    func placeholder(in context: Context) -> BadgerWidgetEntry {
+        BadgerWidgetEntry(date: Date(), summary: .empty)
+    }
+    func getSnapshot(in context: Context, completion: @escaping (BadgerWidgetEntry) -> Void) {
+        completion(BadgerWidgetEntry(date: Date(), summary: BadgerWidgetReader.summary()))
+    }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<BadgerWidgetEntry>) -> Void) {
+        let now = Date()
+        let summary = BadgerWidgetReader.summary(now: now)
+        let entry = BadgerWidgetEntry(date: now, summary: summary)
+        // Refresh when the soonest escalation passes (count/most-urgent may change), else 15m.
+        let refresh = summary.mostUrgent.map { max($0.nextFire, now.addingTimeInterval(60)) }
+            ?? now.addingTimeInterval(15 * 60)
+        completion(Timeline(entries: [entry], policy: .after(refresh)))
+    }
+}
+
+struct BadgerWidgetView: View {
+    let entry: BadgerWidgetEntry
 
     var body: some View {
-        VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
+        if let urgent = entry.summary.mostUrgent {
+            active(urgent, count: entry.summary.activeCount)
+        } else {
+            empty
+        }
+    }
 
-            Text("Emoji:")
-            Text(entry.emoji)
+    private var empty: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "checkmark.circle.fill").font(.title).foregroundStyle(.green)
+            Text("All clear").font(.headline)
+            Text("Nothing badgering you").font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func active(_ urgent: BadgerWidgetSummary.Item, count: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: urgent.iconName ?? "bell.badge.fill")
+                    .foregroundStyle(tintColor(urgent.tint))
+                Text(urgent.title).font(.headline).lineLimit(1)
+            }
+            countdown(to: urgent.nextFire).font(.title2).monospacedDigit()
+                .foregroundStyle(tintColor(urgent.tint))
+            if count > 1 {
+                Text("+\(count - 1) more badgering").font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Button(intent: MarkBadgerDoneIntent(badgerID: urgent.id)) {
+                Label("Done", systemImage: "checkmark").font(.caption).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func countdown(to fire: Date) -> some View {
+        if fire > entry.date {
+            Text(timerInterval: entry.date...fire, countsDown: true)
+        } else {
+            Text("now")
+        }
+    }
+
+    /// Map a stored tint token to a color; unknown/`accent` → the accent color (§16).
+    private func tintColor(_ token: String) -> Color {
+        switch token {
+        case "red":    return .red
+        case "orange": return .orange
+        case "yellow": return .yellow
+        case "green":  return .green
+        case "teal":   return .teal
+        case "blue":   return .blue
+        default:       return .accentColor
         }
     }
 }
 
 struct BadgerMeWidget: Widget {
-    let kind: String = "BadgerMeWidget"
+    let kind = "BadgerMeWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            if #available(iOS 17.0, *) {
-                BadgerMeWidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
-            } else {
-                BadgerMeWidgetEntryView(entry: entry)
-                    .padding()
-                    .background()
-            }
+        StaticConfiguration(kind: kind, provider: BadgerWidgetProvider()) { entry in
+            BadgerWidgetView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("My Widget")
-        .description("This is an example widget.")
+        .configurationDisplayName("Badgering")
+        .description("Your most urgent Badger, its countdown, and a Done button.")
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
-}
-
-#Preview(as: .systemSmall) {
-    BadgerMeWidget()
-} timeline: {
-    SimpleEntry(date: .now, emoji: "😀")
-    SimpleEntry(date: .now, emoji: "🤩")
 }

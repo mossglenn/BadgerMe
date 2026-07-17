@@ -92,6 +92,16 @@ public final class BadgerEngine {
         await dispatch(.alarmDismissed(level: rung), toBadgerID: id)
     }
 
+    /// Snooze every actively-escalating Badger for `duration` — the "Snooze all" control
+    /// (M6 CP3, §11). Only `.active` Badgers: pending ones haven't started and snoozed ones
+    /// are already quiet, so this is the one-tap "make the current noise stop" bulk action.
+    public func snoozeAllActive(duration: TimeInterval) async {
+        let all = (try? context.fetch(FetchDescriptor<Badger>())) ?? []
+        for badger in all where badger.state == .active {
+            await dispatch(.userSnoozed(duration: duration), to: badger)
+        }
+    }
+
     /// Hard-delete the Badger and its event log (D5), after tearing down its alerts.
     public func delete(_ id: UUID) async {
         guard let badger = fetch(id) else { return }

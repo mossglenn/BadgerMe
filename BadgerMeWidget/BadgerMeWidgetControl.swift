@@ -1,54 +1,25 @@
 //
 //  BadgerMeWidgetControl.swift
-//  BadgerMeWidget
+//  BadgerMeWidget — a Control Center control: "Snooze all" (§11, M6 CP3).
 //
-//  Created by Amos Glenn on 7/6/26.
+//  One-tap snooze of every actively-escalating Badger, backed by SnoozeAllBadgersIntent
+//  (runs in-app headless, background-launched from the control). A "New Badger" control is
+//  deferred to M7, when the create screen it would open exists.
 //
 
 import AppIntents
 import SwiftUI
 import WidgetKit
+import BadgerKit
 
 struct BadgerMeWidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(
-            kind: "com.badgerme.BadgerMe.BadgerMeWidget",
-            provider: Provider()
-        ) { value in
-            ControlWidgetToggle(
-                "Start Timer",
-                isOn: value,
-                action: StartTimerIntent()
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+        StaticControlConfiguration(kind: "com.badgerme.BadgerMe.SnoozeAll") {
+            ControlWidgetButton(action: SnoozeAllBadgersIntent()) {
+                Label("Snooze all Badgers", systemImage: "moon.zzz.fill")
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
-    }
-}
-
-extension BadgerMeWidgetControl {
-    struct Provider: ControlValueProvider {
-        var previewValue: Bool {
-            false
-        }
-
-        func currentValue() async throws -> Bool {
-            let isRunning = true // Check if the timer is running
-            return isRunning
-        }
-    }
-}
-
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
-
-    @Parameter(title: "Timer is running")
-    var value: Bool
-
-    func perform() async throws -> some IntentResult {
-        // Start / stop the timer based on `value`.
-        return .result()
+        .displayName("Snooze All Badgers")
+        .description("Snooze every actively escalating Badger.")
     }
 }

@@ -449,4 +449,27 @@ struct EngineTests {
             BadgerNotifications.identifier(badgerID: deadID, slot: .wake),
         ])
     }
+
+    // MARK: - M6 CP3: snooze-all control
+
+    @Test("snoozeAllActive snoozes only escalating (.active) Badgers, not pending")
+    func snoozeAllActiveOnlyActive() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeChannel()]),
+                                  repeatBatchSize: 2, now: { clock })
+        let a = await engine.create(title: "a", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        let b = await engine.create(title: "b", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        let pending = await engine.create(title: "p", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        await engine.handleChannelEvent(.levelFired(badgerID: a, rung: 0))
+        await engine.handleChannelEvent(.levelFired(badgerID: b, rung: 0))
+        #expect(try #require(fetchBadger(a, c)).state == .active)
+        #expect(try #require(fetchBadger(pending, c)).state == .pending)
+
+        await engine.snoozeAllActive(duration: 600)
+
+        #expect(try #require(fetchBadger(a, c)).state == .snoozed)
+        #expect(try #require(fetchBadger(b, c)).state == .snoozed)
+        #expect(try #require(fetchBadger(pending, c)).state == .pending)   // untouched
+    }
 }
