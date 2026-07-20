@@ -327,6 +327,41 @@ public final class BadgerEngine {
         return (LadderPresets.balanced.rungs, LadderPresets.balanced.defaultMaxSnoozeCount)
     }
 
+    /// Create or update a USER ladder template (M7 CP4 — the ladder editor). Upserts by `id`; rungs
+    /// are delay-sorted and re-indexed 0..n so the stored ladder is always well-formed. Built-in
+    /// templates are owned by `seedBuiltInLadders` (which would overwrite edits), so a save targeting
+    /// an existing built-in is refused. Returns the template id.
+    @discardableResult
+    public func saveTemplate(id: UUID = UUID(), name: String, rungs: [RungSpec],
+                             maxSnoozeCount: Int) -> UUID {
+        let reindexed = rungs.sorted { $0.delay < $1.delay }.enumerated()
+            .map { RungSpec(index: $0.offset, delay: $0.element.delay, actions: $0.element.actions) }
+        var fd = FetchDescriptor<LadderTemplate>(predicate: #Predicate { $0.id == id })
+        fd.fetchLimit = 1
+        if let existing = (try? context.fetch(fd))?.first {
+            guard !existing.isBuiltIn else { return id }   // built-ins are read-only here
+            existing.name = name
+            existing.rungs = reindexed
+            existing.defaultMaxSnoozeCount = max(0, maxSnoozeCount)
+        } else {
+            context.insert(LadderTemplate(id: id, name: name, rungs: reindexed,
+                                          defaultMaxSnoozeCount: max(0, maxSnoozeCount),
+                                          isBuiltIn: false))
+        }
+        try? context.save()
+        return id
+    }
+
+    /// Delete a user template (M7 CP4). Built-ins are protected — deleting one is a no-op. Does not
+    /// touch Badgers already created from it (their bound ladder is a frozen copy).
+    public func deleteTemplate(id: UUID) {
+        var fd = FetchDescriptor<LadderTemplate>(predicate: #Predicate { $0.id == id })
+        fd.fetchLimit = 1
+        guard let t = (try? context.fetch(fd))?.first, !t.isBuiltIn else { return }
+        context.delete(t)
+        try? context.save()
+    }
+
     // MARK: - Channel observation (§14 path 1)
 
     /// Start consuming the live transition stream of every observable channel

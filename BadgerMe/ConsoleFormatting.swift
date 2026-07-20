@@ -52,11 +52,12 @@ enum ConsoleFormat {
 
 /// A compact read-only summary of a ladder's rungs (used in create + detail).
 struct LadderPreview: View {
-    let preset: LadderPreset
+    let rungs: [RungSpec]
+    let maxSnooze: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(preset.rungs, id: \.index) { rung in
+            ForEach(rungs.sorted { $0.index < $1.index }, id: \.index) { rung in
                 let action = rung.actions.first
                 HStack(spacing: 8) {
                     Text(ConsoleFormat.delay(rung.delay))
@@ -70,7 +71,7 @@ struct LadderPreview: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-            Text("Snooze budget: \(preset.defaultMaxSnoozeCount)")
+            Text("Snooze budget: \(maxSnooze)")
                 .font(.caption2).foregroundStyle(.secondary)
         }
     }

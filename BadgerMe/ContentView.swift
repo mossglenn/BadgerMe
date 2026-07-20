@@ -16,6 +16,7 @@ struct ContentView: View {
 
     @Query(sort: \Badger.createdAt, order: .reverse) private var badgers: [Badger]
     @State private var showCreate = false
+    @State private var showLadders = false
     #if DEBUG
     @Query(sort: \EventRecord.timestamp, order: .reverse) private var events: [EventRecord]
     @State private var ceilingResult: String?
@@ -64,6 +65,10 @@ struct ContentView: View {
             }
             .navigationTitle("BadgerMe")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showLadders = true } label: { Image(systemName: "square.stack.3d.up") }
+                        .accessibilityLabel("Ladders")
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showCreate = true } label: { Image(systemName: "plus") }
                         .disabled(atCap)
@@ -71,6 +76,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showCreate) { CreateBadgerView(engine: engine) }
+            .sheet(isPresented: $showLadders) { LadderListView(engine: engine) }
         }
         .task { await engine.reconcileAll() }
     }
