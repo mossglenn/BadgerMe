@@ -45,4 +45,39 @@ public enum BadgerConfig {
     public static func setDefaultSnoozeMinutes(_ minutes: Int) {
         store?.set(max(1, minutes), forKey: snoozeMinutesKey)
     }
+
+    // MARK: - Default ladder (M7 CP2 / D10)
+
+    private static let defaultLadderKey = "defaultLadderID"
+
+    /// The ladder a new Badger uses when the caller names none (create's fallback, §16). Defaults
+    /// to the built-in "Default" preset until Settings writes another. Stored as a UUID string.
+    public static var defaultLadderID: UUID {
+        get {
+            guard let s = store?.string(forKey: defaultLadderKey), let id = UUID(uuidString: s)
+            else { return LadderPresets.defaultID }
+            return id
+        }
+        set { store?.set(newValue.uuidString, forKey: defaultLadderKey) }
+    }
+
+    // MARK: - Snooze-duration options (M7 CP2 / D6)
+
+    private static let snoozeOptionsKey = "snoozeOptionsMinutes"
+
+    /// The quick-snooze menu (minutes) until Settings writes one (§16/D6).
+    public static let fallbackSnoozeOptions = [5, 9, 15, 30, 60]
+
+    /// Positive, de-duplicated, sorted; empty falls back to `fallbackSnoozeOptions`. Shared by the
+    /// getter (sanitising stored values) and setter (sanitising before store) so both agree.
+    public static func sanitizedSnoozeOptions(_ raw: [Int]) -> [Int] {
+        let clean = Array(Set(raw.filter { $0 > 0 })).sorted()
+        return clean.isEmpty ? fallbackSnoozeOptions : clean
+    }
+
+    /// The quick-snooze durations (minutes) the UI offers. Written by M7 Settings.
+    public static var snoozeOptionsMinutes: [Int] {
+        get { sanitizedSnoozeOptions((store?.array(forKey: snoozeOptionsKey) as? [Int]) ?? []) }
+        set { store?.set(sanitizedSnoozeOptions(newValue), forKey: snoozeOptionsKey) }
+    }
 }

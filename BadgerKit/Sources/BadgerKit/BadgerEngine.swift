@@ -138,6 +138,27 @@ public final class BadgerEngine {
         return Array(Set(all.flatMap { $0.focusTags })).sorted()
     }
 
+    /// Set a Badger's Focus-scope tags (M7 CP2; backs the tag editor, unblocks the §13 scope check).
+    /// Re-evaluates arming under the active Focus filter so a scope change takes effect immediately —
+    /// the same per-Badger hold/arm path `applyFocusFilter` uses (`armSchedule` itself gates on
+    /// `badgerEscalates` and caps prominence). Terminal/snoozed Badgers just store the tags.
+    public func setFocusTags(_ tags: [String], on id: UUID) async {
+        guard let badger = fetch(id) else { return }
+        badger.focusTags = Array(Set(tags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty })).sorted()
+        if !isTerminal(badger.state), badger.state != .snoozed {
+            await cancelPending(for: badger)
+            badger.armedAlarms = []
+            let ctx = makeContext(for: badger)
+            let state = MachineState(from: badger)
+            let from: Int
+            if case .active(let k) = state.status { from = k + 1 } else { from = 0 }
+            await armSchedule(from: from, badger: badger, state: state, ctx: ctx)
+        }
+        try? context.save()
+    }
+
     /// Hard-delete the Badger and its event log (D5), after tearing down its alerts.
     public func delete(_ id: UUID) async {
         guard let badger = fetch(id) else { return }
@@ -253,7 +274,7 @@ public final class BadgerEngine {
     }
 
     /// Reusable ladder templates as Sendable snapshots (backs LadderEntity/LadderQuery).
-    /// Empty until M7 seeds the named presets (D10).
+    /// Populated by `seedBuiltInLadders` (M7 CP2) plus any user-created templates.
     public func ladderTemplateSnapshots() -> [LadderSnapshot] {
         var fd = FetchDescriptor<LadderTemplate>()
         fd.sortBy = [SortDescriptor(\.name)]
@@ -261,13 +282,44 @@ public final class BadgerEngine {
     }
 
     /// Resolve a ladder template's rungs + snooze cap for CreateBadgerIntent's `ladder`
-    /// parameter. Returns nil for an unknown id — v1 seeds no templates until M7/D10, so
-    /// create falls back to `BadgerLadders.defaultRungs`.
+    /// parameter (and `defaultLadder`). Returns nil for an unknown id; create then falls back to
+    /// `defaultLadder()`. The built-in presets are seeded by `seedBuiltInLadders` (M7 CP2).
     public func ladderRungs(templateID: UUID) -> (rungs: [RungSpec], maxSnoozeCount: Int)? {
         var fd = FetchDescriptor<LadderTemplate>(predicate: #Predicate { $0.id == templateID })
         fd.fetchLimit = 1
         guard let t = (try? context.fetch(fd))?.first else { return nil }
         return (t.rungs.sorted { $0.index < $1.index }, t.defaultMaxSnoozeCount)
+    }
+
+    /// Seed / refresh the built-in D10 ladder presets as `isBuiltIn` templates (M7 CP2, §10/D10).
+    /// Idempotent: upserts by each preset's stable id, so relaunches don't duplicate and a preset
+    /// revision in a new build updates in place. Called once at launch (composition root) before
+    /// any create runs; this is what populates `ladderTemplateSnapshots` / `ladderRungs`.
+    public func seedBuiltInLadders() {
+        for preset in LadderPresets.all {
+            let id = preset.id
+            var fd = FetchDescriptor<LadderTemplate>(predicate: #Predicate { $0.id == id })
+            fd.fetchLimit = 1
+            if let existing = (try? context.fetch(fd))?.first {
+                existing.name = preset.name
+                existing.rungs = preset.rungs
+                existing.defaultMaxSnoozeCount = preset.defaultMaxSnoozeCount
+                existing.isBuiltIn = true
+            } else {
+                context.insert(LadderTemplate(id: preset.id, name: preset.name,
+                                              rungs: preset.rungs,
+                                              defaultMaxSnoozeCount: preset.defaultMaxSnoozeCount,
+                                              isBuiltIn: true))
+            }
+        }
+        try? context.save()
+    }
+
+    /// The ladder a create with no explicit template uses: the configured default (§16, resolved
+    /// through the seeded templates so it reflects any user edit), else the built-in Default preset.
+    public func defaultLadder() -> (rungs: [RungSpec], maxSnoozeCount: Int) {
+        if let resolved = ladderRungs(templateID: BadgerConfig.defaultLadderID) { return resolved }
+        return (LadderPresets.balanced.rungs, LadderPresets.balanced.defaultMaxSnoozeCount)
     }
 
     // MARK: - Channel observation (§14 path 1)

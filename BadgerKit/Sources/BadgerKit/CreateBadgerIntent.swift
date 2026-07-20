@@ -3,9 +3,9 @@
 //  BadgerKit — the manual/inbound create entry point (M4, §11, headless-first L3).
 //
 //  Chainable and usable in time/location Automations ("when I leave work, badger me…").
-//  The `ladder` parameter resolves a persisted template's rungs; until M7 seeds the D10
-//  presets none exist, so create falls back to BadgerLadders.defaultRungs. Runs in-app
-//  (plain AppIntent, no AppIntents extension per D7) where the engine @Dependency is
+//  The `ladder` parameter resolves a persisted template's rungs; with none named it uses
+//  `engine.defaultLadder()` (the configured default, else the built-in Default preset — M7 CP2).
+//  Runs in-app (plain AppIntent, no AppIntents extension per D7) where the engine @Dependency is
 //  registered, without foregrounding (openAppWhenRun stays false).
 //
 
@@ -32,8 +32,10 @@ public struct CreateBadgerIntent: AppIntent {
         let start = startDate ?? Date()
         let resolved: (rungs: [RungSpec], maxSnoozeCount: Int)?
         if let ladder { resolved = await engine.ladderRungs(templateID: ladder.id) } else { resolved = nil }
-        let rungs = resolved?.rungs ?? BadgerLadders.defaultRungs
-        let maxSnooze = resolved?.maxSnoozeCount ?? BadgerLadders.defaultMaxSnoozeCount
+        let chosen: (rungs: [RungSpec], maxSnoozeCount: Int)
+        if let resolved { chosen = resolved } else { chosen = await engine.defaultLadder() }
+        let rungs = chosen.rungs
+        let maxSnooze = chosen.maxSnoozeCount
 
         let id = await engine.create(title: title, notes: notes, startAt: start,
                                      rungs: rungs, maxSnoozeCount: maxSnooze)

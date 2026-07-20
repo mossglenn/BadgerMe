@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Rehydrate the AlarmKit owner map from persisted armedAlarms BEFORE observing, so a
         // prior-process alarm firing is attributed after a relaunch (M3 cold-kill fix, ckpt 4).
         Task { @MainActor in
+            engine.seedBuiltInLadders()       // D10 built-in ladder presets (idempotent) — M7 CP2
             await engine.rehydrateArmedAlarms()
             await engine.sweepStrayAlerts()   // cancel crash-window orphans no live Badger owns (M6 CP2)
             await refreshFocusFilter()        // apply the active Focus's escalation cap on launch (M6 CP4)
