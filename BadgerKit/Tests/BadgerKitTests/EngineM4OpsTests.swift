@@ -25,7 +25,7 @@ struct EngineM4OpsTests {
         [
             RungSpec(index: 0, delay: 0,   actions: [ChannelAction(channelID: "notification", prominence: .active)]),
             RungSpec(index: 1, delay: 60,  actions: [ChannelAction(channelID: "notification", prominence: .timeSensitive)]),
-            RungSpec(index: 2, delay: 180, actions: [ChannelAction(channelID: "notification", prominence: .timeSensitive)]),
+            RungSpec(index: 2, delay: 120, actions: [ChannelAction(channelID: "notification", prominence: .timeSensitive)]),
         ]
     }
 

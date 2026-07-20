@@ -18,21 +18,22 @@ struct EngineTemplateTests {
                      repeatBatchSize: 1, now: { Date(timeIntervalSinceReferenceDate: 0) })
     }
 
-    /// Deliberately out-of-order indices + delays, to prove save sorts + re-indexes.
+    /// Out-of-order indices with a fixed array order [300, 60]; save must ignore the given indices
+    /// and re-index by POSITION, preserving array order (D8: incremental gaps are not delay-sorted).
     private let messyRungs = [
         RungSpec(index: 5, delay: 300, actions: [ChannelAction(channelID: "notification", prominence: .active)]),
         RungSpec(index: 2, delay: 60,  actions: [ChannelAction(channelID: "notification", prominence: .timeSensitive)]),
     ]
 
-    @Test("saveTemplate creates a user template, delay-sorted and re-indexed 0..n")
-    func createSortsAndReindexes() async throws {
+    @Test("saveTemplate preserves array order and re-indexes 0..n (no delay sort)")
+    func createPreservesOrderAndReindexes() async throws {
         let c = try makeModelContainer(inMemory: true)
         let engine = makeEngine(c)
         let id = engine.saveTemplate(name: "Mine", rungs: messyRungs, maxSnoozeCount: 2)
 
         let r = try #require(engine.ladderRungs(templateID: id))
         #expect(r.rungs.map(\.index) == [0, 1])
-        #expect(r.rungs.map(\.delay) == [60, 300])
+        #expect(r.rungs.map(\.delay) == [300, 60])   // array order preserved, NOT delay-sorted
         #expect(r.maxSnoozeCount == 2)
         #expect(engine.ladderTemplateSnapshots().contains { $0.id == id && $0.name == "Mine" })
     }

@@ -4,6 +4,8 @@
 //
 //  Seed content: the "long-and-soft / balanced / short-and-loud" trio (Gentle / Default / Urgent),
 //  each encoding a prominence arc + the gentle→klaxon sound arc from SoundCatalog. Value-only here;
+//  rung delays are incremental gaps (D8, M7): each is the wait after the previous rung fires
+//  (rung 0 from start). The last rung's delay is also its repeat interval.
 //  CP2 seeds these as `isBuiltIn` LadderTemplates by their stable `id` (idempotent upsert), and the
 //  create flow's fallback moves from `BadgerLadders.defaultRungs` to the Default preset. Pure and
 //  Foundation-only — unit-tested without a container.
@@ -48,7 +50,7 @@ public enum LadderPresets {
         rungs: [
             RungSpec(index: 0, delay: 0,    actions: [soft(.active, SoundCatalog.ahem)]),
             RungSpec(index: 1, delay: 900,  actions: [soft(.timeSensitive, SoundCatalog.badger)]),
-            RungSpec(index: 2, delay: 2700, actions: [soft(.timeSensitive, SoundCatalog.badger)]),
+            RungSpec(index: 2, delay: 1800, actions: [soft(.timeSensitive, SoundCatalog.badger)]),
         ],
         defaultMaxSnoozeCount: 3)
 
@@ -58,7 +60,7 @@ public enum LadderPresets {
         rungs: [
             RungSpec(index: 0, delay: 0,   actions: [soft(.active, SoundCatalog.ahem)]),
             RungSpec(index: 1, delay: 300, actions: [soft(.timeSensitive, SoundCatalog.badger)]),
-            RungSpec(index: 2, delay: 900, actions: [hard(SoundCatalog.redAlert)]),
+            RungSpec(index: 2, delay: 600, actions: [hard(SoundCatalog.redAlert)]),
         ],
         defaultMaxSnoozeCount: 2)
 
@@ -68,7 +70,7 @@ public enum LadderPresets {
         rungs: [
             RungSpec(index: 0, delay: 0,   actions: [soft(.timeSensitive, SoundCatalog.badger)]),
             RungSpec(index: 1, delay: 120, actions: [hard(SoundCatalog.redAlert)]),
-            RungSpec(index: 2, delay: 300, actions: [hard(SoundCatalog.redAlert)]),
+            RungSpec(index: 2, delay: 180, actions: [hard(SoundCatalog.redAlert)]),
         ],
         defaultMaxSnoozeCount: 1)
 

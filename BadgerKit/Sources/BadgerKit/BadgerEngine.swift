@@ -328,13 +328,15 @@ public final class BadgerEngine {
     }
 
     /// Create or update a USER ladder template (M7 CP4 — the ladder editor). Upserts by `id`; rungs
-    /// are delay-sorted and re-indexed 0..n so the stored ladder is always well-formed. Built-in
-    /// templates are owned by `seedBuiltInLadders` (which would overwrite edits), so a save targeting
-    /// an existing built-in is refused. Returns the template id.
+    /// keep their given order (D8: delays are incremental gaps) and are re-indexed 0..n so the stored
+    /// ladder is well-formed. Built-in templates are owned by `seedBuiltInLadders` (which would
+    /// overwrite edits), so a save targeting an existing built-in is refused. Returns the template id.
     @discardableResult
     public func saveTemplate(id: UUID = UUID(), name: String, rungs: [RungSpec],
                              maxSnoozeCount: Int) -> UUID {
-        let reindexed = rungs.sorted { $0.delay < $1.delay }.enumerated()
+        // D8 (M7): rung delays are incremental gaps, so their given ARRAY ORDER is the ladder order
+        // (gaps aren't monotonic — don't sort by delay). Re-index by position, preserving order.
+        let reindexed = rungs.enumerated()
             .map { RungSpec(index: $0.offset, delay: $0.element.delay, actions: $0.element.actions) }
         var fd = FetchDescriptor<LadderTemplate>(predicate: #Predicate { $0.id == id })
         fd.fetchLimit = 1
@@ -659,9 +661,10 @@ public final class BadgerEngine {
     }
 
     private func makeContext(for badger: Badger) -> Context {
-        let rungs = (badger.ladder?.rungs ?? [])
-            .sorted { $0.index < $1.index }
-            .map { Rung(index: $0.index, delay: $0.delay) }
+        // RungSpec.delay is the incremental gap after the previous rung (D8, M7); convert to the
+        // reducer's absolute-from-start Rung.delay here — the one place stored ladders become the
+        // reducer's timing model. See RungTiming.absoluteRungs.
+        let rungs = absoluteRungs(fromIncremental: badger.ladder?.rungs ?? [])
         return Context(now: now(), rungs: rungs, maxSnoozeCount: badger.maxSnoozeCount)
     }
 

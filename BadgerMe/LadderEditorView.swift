@@ -51,7 +51,7 @@ struct LadderEditorView: View {
             Section("Name") {
                 TextField("Ladder name", text: $name).disabled(isBuiltIn)
             }
-            Section("Rungs (soonest first)") {
+            Section("Rungs (each delay is the wait after the previous)") {
                 ForEach($rungs) { $rung in RungEditor(rung: $rung, disabled: isBuiltIn) }
                     .onDelete { if !isBuiltIn { rungs.remove(atOffsets: $0) } }
                 if !isBuiltIn {
@@ -79,8 +79,9 @@ struct LadderEditorView: View {
     }
 
     private func addRung() {
-        let nextDelay = (rungs.map(\.delayMinutes).max() ?? 0) + 5
-        rungs.append(EditRung(delayMinutes: rungs.isEmpty ? 0 : nextDelay,
+        // D8 (M7): each rung's delay is the gap after the previous rung — a new rung defaults to
+        // 5 min after the one before (the first rung fires at start).
+        rungs.append(EditRung(delayMinutes: rungs.isEmpty ? 0 : 5,
                               prominence: .timeSensitive, soundID: SoundCatalog.badger.id))
     }
 
@@ -114,7 +115,7 @@ private struct RungEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("After").foregroundStyle(.secondary)
+                Text("Wait").foregroundStyle(.secondary)
                 Stepper("\(Int(rung.delayMinutes)) min", value: $rung.delayMinutes, in: 0...1440, step: 1)
             }
             Picker("Prominence", selection: $rung.prominence) {
