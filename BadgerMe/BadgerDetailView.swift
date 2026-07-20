@@ -30,6 +30,18 @@ struct BadgerDetailView: View {
         List {
             Section { header }
             Section { actions }
+            Section {
+                NavigationLink {
+                    FocusTagsView(badger: badger, engine: engine)
+                } label: {
+                    HStack {
+                        Label("Focus tags", systemImage: "tag")
+                        Spacer()
+                        Text(badger.focusTags.isEmpty ? "None" : badger.focusTags.joined(separator: ", "))
+                            .foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+            }
             Section("History") {
                 if events.isEmpty {
                     Text("No events yet.").foregroundStyle(.secondary)
