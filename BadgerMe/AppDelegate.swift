@@ -77,9 +77,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         Task { @MainActor in
             await engine.rehydrateArmedAlarms()
             await engine.sweepStrayAlerts()   // cancel crash-window orphans no live Badger owns (M6 CP2)
+            await refreshFocusFilter()        // apply the active Focus's escalation cap on launch (M6 CP4)
             engine.startObserving()   // consume AlarmKit's live lifecycle stream (§14 path 1)
         }
         return true
+    }
+
+    /// Read the active Focus's BadgerMe filter (if any) and apply it (§13, M6 CP4). `.current`
+    /// throws when the active Focus has no BadgerMe filter → nil → the filter clears, so a stale
+    /// cap never outlives its Focus. Live Focus changes are handled by the filter intent's
+    /// headless perform() (SP14); this is the cold-launch backstop.
+    func refreshFocusFilter() async {
+        let current = try? await SetBadgerFocusFilterIntent.current
+        await engine.applyFocusFilter(cap: current?.cap?.prominenceCap, onlyTag: current?.onlyTag)
     }
 
     // A soft rung fired while the app is foreground: advance that Badger now + show it.

@@ -472,4 +472,44 @@ struct EngineTests {
         #expect(try #require(fetchBadger(b, c)).state == .snoozed)
         #expect(try #require(fetchBadger(pending, c)).state == .pending)   // untouched
     }
+
+    // MARK: - M6 CP4: Focus filter (cap + scope) applied at arm time
+
+    @Test("Focus cap remaps a breakthrough rung to a notification at arm time")
+    func focusCapRemapsBreakthrough() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let alarm = FakeAlarmChannel(); let notif = FakeChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([alarm, notif]),
+                                  repeatBatchSize: 1, now: { clock })
+        let id = await engine.create(title: "x", startAt: at(0), rungs: alarmLadder, maxSnoozeCount: 1)
+        #expect(!(await alarm.scheduled.isEmpty))         // armed on alarmkit
+        #expect(await notif.scheduled.isEmpty)
+
+        await engine.applyFocusFilter(cap: .timeSensitive, onlyTag: nil)
+
+        // Breakthrough downgraded + remapped to a time-sensitive notification; alarm refs cleared.
+        #expect(await notif.scheduled.contains { $0.slot == .rung(0) && $0.prominence == .timeSensitive })
+        #expect(!(await alarm.cancelledIdentifiers.isEmpty))
+        #expect(try #require(fetchBadger(id, c)).armedAlarms.isEmpty)
+    }
+
+    @Test("Focus scope holds an off-tag Badger and re-arms a tagged one")
+    func focusScopeHoldsOffTag() async throws {
+        let clock = at(0)
+        let c = try makeModelContainer(inMemory: true)
+        let notif = FakeChannel()
+        let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([notif]),
+                                  repeatBatchSize: 1, now: { clock })
+        let off = await engine.create(title: "off", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        let on  = await engine.create(title: "on",  startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+        try #require(fetchBadger(off, c)).focusTags = ["home"]
+        try #require(fetchBadger(on,  c)).focusTags = ["work"]
+        try? c.mainContext.save()
+
+        await engine.applyFocusFilter(cap: nil, onlyTag: "work")
+
+        #expect(await notif.scheduled.contains { $0.badgerID == on })       // tagged: re-armed
+        #expect(!(await notif.scheduled.contains { $0.badgerID == off }))   // off-tag: held, cleared
+    }
 }

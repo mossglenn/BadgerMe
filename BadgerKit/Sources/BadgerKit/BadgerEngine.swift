@@ -35,6 +35,11 @@ public final class BadgerEngine {
     /// replenished on reconcile (M6 CP1, `ensureArmed`). SP3: never a single recurring notification.
     private let repeatBatchSize: Int
 
+    /// The active Focus filter's escalation limits (§13, M6 CP4), cached so `armSchedule` /
+    /// `ensureArmed` apply it without an async read each arm. Refreshed by `applyFocusFilter(...)`
+    /// from the filter intent's `perform()` and from `.current` on activation.
+    private var focusFilter: FocusFilterState = .none
+
     private var context: ModelContext { container.mainContext }
 
     /// Public entry: defaults the ambient Live-Activity controller per platform — the real
@@ -100,6 +105,37 @@ public final class BadgerEngine {
         for badger in all where badger.state == .active {
             await dispatch(.userSnoozed(duration: duration), to: badger)
         }
+    }
+
+    /// Set the active Focus filter (§13, M6 CP4) and, if it changed, re-arm every live Badger so
+    /// the new cap/scope takes effect at once — even from a background Focus change (SP14: the
+    /// filter intent's `perform()` fires headless). Held (off-tag) Badgers have their pending
+    /// alerts cancelled and nothing re-armed; escalating Badgers are re-armed from the next
+    /// unfired rung with the cap applied by `armSchedule`. Reducer untouched. Reading `.current`
+    /// is the app's job (iOS-only); this core takes primitives and stays framework-agnostic.
+    public func applyFocusFilter(cap: Prominence?, onlyTag: String?) async {
+        let next = FocusFilterState(cap: cap, onlyTag: onlyTag)
+        guard next != focusFilter else { return }   // unchanged → no re-arm churn
+        focusFilter = next
+
+        let all = (try? context.fetch(FetchDescriptor<Badger>())) ?? []
+        for badger in all where !isTerminal(badger.state) {
+            if badger.state == .snoozed { continue }   // a wake trigger isn't prominence-capped
+            await cancelPending(for: badger)
+            badger.armedAlarms = []
+            let ctx = makeContext(for: badger)
+            let state = MachineState(from: badger)
+            let from: Int
+            if case .active(let k) = state.status { from = k + 1 } else { from = 0 }
+            await armSchedule(from: from, badger: badger, state: state, ctx: ctx)
+        }
+        try? context.save()
+    }
+
+    /// All distinct Focus tags across Badgers, for the Focus-filter tag options provider (§13).
+    public func allFocusTags() -> [String] {
+        let all = (try? context.fetch(FetchDescriptor<Badger>())) ?? []
+        return Array(Set(all.flatMap { $0.focusTags })).sorted()
     }
 
     /// Hard-delete the Badger and its event log (D5), after tearing down its alerts.
@@ -381,19 +417,23 @@ public final class BadgerEngine {
                              state: MachineState, ctx: Context) async {
         guard let specs = badger.ladder?.rungs.sorted(by: { $0.index < $1.index }),
               !specs.isEmpty else { return }
+        // Focus filter (§13, M6 CP4): a Badger the current Focus holds is armed with nothing.
+        guard badgerEscalates(focusTags: badger.focusTags, onlyTag: focusFilter.onlyTag) else { return }
         let last = specs.count - 1
         let rungs = ctx.rungs
 
-        for k in fromLevel...last {
-            let fire = fireDate(level: k, startAt: state.startAt, rungs: rungs)
-            for action in specs[k].actions {
-                if let ref = await schedule(resolve(action, for: badger), at: fire,
-                                            badgerID: badger.id, slot: .rung(k)) {
-                    if ref.channelID == "alarmkit" {
+        if fromLevel <= last {
+            for k in fromLevel...last {
+                let fire = fireDate(level: k, startAt: state.startAt, rungs: rungs)
+                for action in specs[k].actions {
+                    // Cap to the Focus's max prominence before arming (may remap a breakthrough
+                    // alarm to a notification). Notification rungs aren't persisted —
+                    // NotificationChannel.cancelAll prefix-scans by the badger-{id}- namespace.
+                    if let ref = await schedule(cappedAction(resolve(action, for: badger), cap: focusFilter.cap),
+                                                at: fire, badgerID: badger.id, slot: .rung(k)),
+                       ref.channelID == "alarmkit" {
                         badger.armedAlarms.append(ArmedRef(id: ref.identifier, slot: .rung(k)))
                     }
-                    // Notification rungs aren't persisted; NotificationChannel.cancelAll
-                    // prefix-scans the system by the badger-{id}- namespace (survives cold kill).
                 }
             }
         }
@@ -404,7 +444,7 @@ public final class BadgerEngine {
             for n in 1...repeatBatchSize {
                 let fire = firstLastFire.addingTimeInterval(Double(n) * interval)
                 for action in specs[last].actions {
-                    if let ref = await schedule(resolve(action, for: badger), at: fire,
+                    if let ref = await schedule(cappedAction(resolve(action, for: badger), cap: focusFilter.cap), at: fire,
                                                 badgerID: badger.id, slot: .repeatTail(rung: last, n: n)),
                        ref.channelID == "alarmkit" {
                         badger.armedAlarms.append(ArmedRef(id: ref.identifier, slot: .repeatTail(rung: last, n: n)))
@@ -425,6 +465,9 @@ public final class BadgerEngine {
         guard !state.status.isTerminal else { return }
         guard let specs = badger.ladder?.rungs.sorted(by: { $0.index < $1.index }),
               !specs.isEmpty else { return }
+        // Focus filter (§13): a held Badger replenishes nothing (its pending alerts were
+        // cancelled by applyFocusFilter when the Focus turned on).
+        guard badgerEscalates(focusTags: badger.focusTags, onlyTag: focusFilter.onlyTag) else { return }
 
         let desired = forwardSlots(state: state, ctx: ctx, repeatBatchSize: repeatBatchSize)
 
@@ -449,9 +492,10 @@ public final class BadgerEngine {
             guard rungIndex < specs.count else { continue }
             let fire = slotFireDate(slot, startAt: state.startAt, rungs: ctx.rungs)
             for action in specs[rungIndex].actions {
-                guard let channel = registry.channel(for: action.channelID) else { continue }
+                let capped = cappedAction(resolve(action, for: badger), cap: focusFilter.cap)
+                guard let channel = registry.channel(for: capped.channelID) else { continue }
                 if channel.id == "alarmkit", armed.contains(slot) { continue }   // already armed
-                if let ref = await schedule(resolve(action, for: badger), at: fire,
+                if let ref = await schedule(capped, at: fire,
                                             badgerID: badger.id, slot: slot),
                    ref.channelID == "alarmkit" {
                     badger.armedAlarms.append(ArmedRef(id: ref.identifier, slot: slot))
