@@ -80,4 +80,12 @@ public enum BadgerConfig {
         get { sanitizedSnoozeOptions((store?.array(forKey: snoozeOptionsKey) as? [Int]) ?? []) }
         set { store?.set(sanitizedSnoozeOptions(newValue), forKey: snoozeOptionsKey) }
     }
+
+    // MARK: - Concurrency cap (M7 CP3 / D3)
+
+    /// Max concurrently-escalating (non-terminal) Badgers (D3). Conservative pin; CP6 retunes it
+    /// against the measured LA concurrent ceiling + the 64-pending-notification budget. The console
+    /// blocks new activations at this count; engine-level enforcement (bounding Shortcuts/Siri too)
+    /// is a later checkpoint.
+    public static let maxConcurrentEscalating = 6
 }
