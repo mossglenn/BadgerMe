@@ -38,7 +38,7 @@ struct LadderListView: View {
                     NavigationLink {
                         LadderEditorView(engine: engine, templateID: nil, name: "",
                                          rungs: [EditRung(delayMinutes: 0, prominence: .active,
-                                                          soundID: SoundCatalog.ahem.id)],
+                                                          soundRef: SoundCatalog.ahem.soundRef)],
                                          maxSnooze: 1, isBuiltIn: false)
                     } label: { Image(systemName: "plus") }
                         .accessibilityLabel("New ladder")
@@ -57,12 +57,9 @@ struct LadderListView: View {
     static func editRungs(from t: LadderTemplate) -> [EditRung] {
         t.rungs.sorted { $0.index < $1.index }.map { spec in
             let action = spec.actions.first
-            let soundID: String? = {
-                if case let .builtIn(id) = action?.soundRef { return id }
-                return nil
-            }()
             return EditRung(delayMinutes: spec.delay / 60,
-                            prominence: action?.prominence ?? .timeSensitive, soundID: soundID)
+                            prominence: action?.prominence ?? .timeSensitive,
+                            soundRef: action?.soundRef)
         }
     }
 }

@@ -1,9 +1,9 @@
 //
 //  LadderEditorView.swift
 //  BadgerMe — build/edit a reusable ladder template (§16, M7 CP4). Edits a local value copy and
-//  persists via engine.saveTemplate (which delay-sorts + re-indexes). Built-in templates are
-//  read-only here (the seed owns them); they can be duplicated into an editable user template.
-//  The per-rung sound is curated-only for now; CP4c adds the full picker (curated + My Sounds).
+//  persists via engine.saveTemplate (which preserves order + re-indexes; delays are incremental
+//  gaps, D8). Built-in templates are read-only here (the seed owns them); they can be duplicated
+//  into an editable user template. Per-rung sound is chosen via SoundPickerView (CP4b).
 //
 
 import SwiftUI
@@ -13,7 +13,7 @@ struct EditRung: Identifiable {
     let id = UUID()
     var delayMinutes: Double
     var prominence: BadgerKit.Prominence
-    var soundID: String?          // curated SoundCatalog id; nil = system default
+    var soundRef: SoundRef?        // built-in, imported, or nil = system default
 }
 
 struct LadderEditorView: View {
@@ -82,16 +82,15 @@ struct LadderEditorView: View {
         // D8 (M7): each rung's delay is the gap after the previous rung — a new rung defaults to
         // 5 min after the one before (the first rung fires at start).
         rungs.append(EditRung(delayMinutes: rungs.isEmpty ? 0 : 5,
-                              prominence: .timeSensitive, soundID: SoundCatalog.badger.id))
+                              prominence: .timeSensitive, soundRef: SoundCatalog.badger.soundRef))
     }
 
     private func specs() -> [RungSpec] {
         rungs.map { r in
             let channel = r.prominence == .breakthrough ? "alarmkit" : "notification"
-            let sound: SoundRef? = r.soundID.map { .builtIn(id: $0) }
             return RungSpec(index: 0, delay: r.delayMinutes * 60,
                             actions: [ChannelAction(channelID: channel, prominence: r.prominence,
-                                                    soundRef: sound)])
+                                                    soundRef: r.soundRef)])
         }
     }
 
@@ -123,9 +122,14 @@ private struct RungEditor: View {
                 Text("Time-sensitive").tag(BadgerKit.Prominence.timeSensitive)
                 Text("Alarm (breakthrough)").tag(BadgerKit.Prominence.breakthrough)
             }
-            Picker("Sound", selection: $rung.soundID) {
-                Text("Default").tag(String?.none)
-                ForEach(SoundCatalog.all) { Text($0.name).tag(String?.some($0.id)) }
+            NavigationLink {
+                SoundPickerView(selection: $rung.soundRef)
+            } label: {
+                HStack {
+                    Text("Sound")
+                    Spacer()
+                    Text(ConsoleFormat.soundName(rung.soundRef)).foregroundStyle(.secondary)
+                }
             }
         }
         .disabled(disabled)

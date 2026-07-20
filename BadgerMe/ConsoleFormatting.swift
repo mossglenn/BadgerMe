@@ -36,6 +36,16 @@ enum ConsoleFormat {
         }
     }
 
+    /// User-facing name for a rung's sound reference.
+    static func soundName(_ ref: SoundRef?) -> String {
+        switch ref {
+        case .none:            return "Default"
+        case .builtIn(let id): return SoundCatalog.sound(id: id)?.name ?? id
+        case .imported(let f): return f
+        case .renderedSpeech:  return "Spoken"
+        }
+    }
+
     /// Humanise a raw EventKind string ("levelFired" → "Level fired") — EventKind is module-internal,
     /// so the history timeline renders from the public `kindRaw`. Promote EventKind to public if a
     /// richer typed rendering is wanted later (§7 note).
