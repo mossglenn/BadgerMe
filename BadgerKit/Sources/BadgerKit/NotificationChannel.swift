@@ -89,7 +89,7 @@ public struct NotificationChannel: AlertChannel {
         // ≤60 s fires (and the arm-ahead ladder generally) use an interval trigger,
         // not a calendar trigger (§20 near-future cliff). Clamp > 0; a fire date at
         // or before now (e.g. rung 0 at +0, or a reconcile catch-up) becomes imminent.
-        let interval = max(fireDate.timeIntervalSinceNow, 1)
+        let interval = max(fireDate.timeIntervalSinceNow, NearFutureFloor.notification)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
 
         let identifier = BadgerNotifications.identifier(badgerID: badgerID, slot: slot)

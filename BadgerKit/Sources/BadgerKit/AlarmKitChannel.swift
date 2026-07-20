@@ -83,8 +83,12 @@ public actor AlarmKitChannel: AlertChannel {
             presentation: AlarmPresentation(alert: alert),
             metadata: BadgerAlarmMetadata(badgerID: badgerID, rung: rung),
             tintColor: .red)
+        // AlarmKit silently drops a `.fixed` alarm whose date is at/before now (e.g. a delay-0
+        // rung 0 created with "start now"), so clamp to a minimum future lead — mirrors the
+        // NotificationChannel clamp. Exact floor unmeasured (B2/SP13).
+        let fire = NearFutureFloor.clamp(fireDate, minLead: NearFutureFloor.alarm)
         let config = AlarmManager.AlarmConfiguration(
-            schedule: .fixed(fireDate),
+            schedule: .fixed(fire),
             attributes: attributes,
             stopIntent: MarkBadgerDismissedIntent(badgerID: badgerID, rung: rungIndex(of: slot)),
             secondaryIntent: MarkBadgerDoneIntent(badgerID: badgerID),
