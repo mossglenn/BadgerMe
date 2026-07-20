@@ -87,3 +87,17 @@ public enum SoundImportValidator {
         return nil
     }
 }
+
+public extension SoundRef {
+    /// The bundle / `Library/Sounds` filename to play, or `nil` to fall back to the system default.
+    /// Unifies sound resolution across channels (M7 CP4b): a built-in id resolves through the curated
+    /// catalog; an unknown id yields nil (→ default), so a deleted/missing sound degrades gracefully
+    /// (§10). `renderedSpeech` (D11) isn't produced yet, so it also falls back.
+    var resolvedFilename: String? {
+        switch self {
+        case .builtIn(let id): return SoundCatalog.sound(id: id)?.filename
+        case .imported(let f): return f
+        case .renderedSpeech:  return nil
+        }
+    }
+}

@@ -63,4 +63,15 @@ struct SoundLibraryTests {
         #expect(SoundImportValidator.allowedEncodings == [.linearPCM, .ima4, .uLaw, .aLaw])
         #expect(SoundImportValidator.maxDuration == 30)
     }
+
+    // MARK: - SoundRef resolution (M7 CP4b)
+
+    @Test("resolvedFilename: built-in via catalog, imported passthrough, unknown/renderedSpeech nil")
+    func resolvedFilename() {
+        #expect(SoundRef.builtIn(id: "badger").resolvedFilename == "Badger.caf")
+        #expect(SoundRef.builtIn(id: "red-alert").resolvedFilename == "RedAlert.caf")
+        #expect(SoundRef.builtIn(id: "nope").resolvedFilename == nil)      // unknown → system default
+        #expect(SoundRef.imported(filename: "Mine.caf").resolvedFilename == "Mine.caf")
+        #expect(SoundRef.renderedSpeech.resolvedFilename == nil)
+    }
 }

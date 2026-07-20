@@ -206,12 +206,8 @@ public actor AlarmKitChannel: AlertChannel {
     }
 
     private nonisolated func sound(for ref: SoundRef?) -> AlertConfiguration.AlertSound {
-        switch ref {
-        case .none:            return .default
-        case .builtIn:         return .default        // curated catalog is M7/D10
-        case .imported(let f): return .named(f)       // bundle or Library/Sounds (§20)
-        case .renderedSpeech:  return .default        // D11 fast-follow
-        }
+        guard let filename = ref?.resolvedFilename else { return .default }  // built-in via catalog, imported, or Library/Sounds (§20)
+        return .named(filename)
     }
 }
 #endif

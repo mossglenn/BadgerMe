@@ -142,12 +142,8 @@ public struct NotificationChannel: AlertChannel {
     }
 
     private func sound(for ref: SoundRef?) -> UNNotificationSound {
-        switch ref {
-        case .none:              return .default
-        case .builtIn:           return .default            // curated catalog is M7/D10
-        case .imported(let f):   return UNNotificationSound(named: UNNotificationSoundName(f))  // bundle or Library/Sounds (§20)
-        case .renderedSpeech:    return .default            // D11 fast-follow
-        }
+        guard let filename = ref?.resolvedFilename else { return .default }  // built-in via catalog, imported, or Library/Sounds (§20)
+        return UNNotificationSound(named: UNNotificationSoundName(filename))
     }
 
     private func slotTag(_ slot: ScheduleSlot) -> String {
