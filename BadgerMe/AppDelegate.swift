@@ -109,6 +109,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                                 didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
         guard let id = BadgerNotifications.badgerID(from: info) else { return }
+        // Swiping a notification away is non-resolving (§14) and needs no catch-up — a later
+        // foreground reconcile handles that. Acting on it would log a redundant reconcile (the
+        // second of the two duplicate events seen on device).
+        if response.actionIdentifier == UNNotificationDismissActionIdentifier { return }
         await engine.handleNotificationResponse(badgerID: id,
                                                 actionID: response.actionIdentifier,
                                                 defaultSnooze: defaultSnooze)

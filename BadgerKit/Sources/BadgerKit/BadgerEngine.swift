@@ -430,8 +430,14 @@ public final class BadgerEngine {
             await dispatch(.levelFired(level: rung, source: .observed), toBadgerID: badgerID)
         case .repeatFired(let badgerID, _, let n):
             await dispatch(.lastRungRepeated(index: n, source: .observed), toBadgerID: badgerID)
-        case .dismissed(let badgerID, let rung):
-            await markAlarmDismissed(badgerID, rung: rung)
+        case .dismissed:
+            // A foreground observe() disappearance of an owned alarm is a user Stop (our own
+            // cancels remove the owner first, so they never reach here). That Stop is already
+            // logged by the alarm's stopIntent (MarkBadgerDismissedIntent → markAlarmDismissed),
+            // which runs foreground AND background — so logging it here too would double-log a
+            // foreground Stop. The stopIntent is the single authoritative dismissal logger; the
+            // observed signal is intentionally dropped.
+            break
         }
     }
 

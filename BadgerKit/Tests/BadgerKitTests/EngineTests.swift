@@ -323,8 +323,8 @@ struct EngineTests {
         #expect(kinds.contains(.lastRungRepeated))
     }
 
-    @Test("an observed dismissal logs but does NOT resolve (§8 dismiss != done)")
-    func observedDismissDoesNotResolve() async throws {
+    @Test("dismissal is logged once (stopIntent path) and does NOT resolve; observe() doesn't double-log")
+    func dismissLogsOnceAndDoesNotResolve() async throws {
         let clock = at(0)
         let c = try makeModelContainer(inMemory: true)
         let engine = BadgerEngine(container: c, registry: AlertChannelRegistry([FakeAlarmChannel()]),
@@ -332,10 +332,17 @@ struct EngineTests {
         let single = [RungSpec(index: 0, delay: 0,
                                actions: [ChannelAction(channelID: "alarmkit", prominence: .breakthrough)])]
         let id = await engine.create(title: "x", startAt: at(0), rungs: single, maxSnoozeCount: 1)
+
+        // A foreground observe() disappearance must NOT log — the stopIntent owns dismissal
+        // logging, else a foreground Stop double-logs (the on-device bug).
         await engine.handleChannelEvent(.dismissed(badgerID: id, rung: 0))
+        #expect(!eventKinds(id, c).contains(.alarmDismissed))
+
+        // The stopIntent path (markAlarmDismissed) logs exactly one dismissal, non-resolving.
+        await engine.markAlarmDismissed(id, rung: 0)
         let b = try #require(fetchBadger(id, c))
         #expect(b.state == .pending)
-        #expect(eventKinds(id, c).contains(.alarmDismissed))
+        #expect(eventKinds(id, c).filter { $0 == .alarmDismissed }.count == 1)
     }
 
     // MARK: - M6 CP1: reconcile replenishment + re-arm
