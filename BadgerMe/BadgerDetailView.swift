@@ -47,7 +47,9 @@ struct BadgerDetailView: View {
         .confirmationDialog("Delete \(badger.title)?", isPresented: $confirmingDelete,
                             titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
-                Task { await engine.delete(badger.id); dismiss() }
+                let id = badger.id       // capture before the model detaches
+                dismiss()                // pop the detail view first, then delete
+                Task { await engine.delete(id) }
             }
         } message: { Text("This removes the Badger and its history for good.") }
     }
@@ -76,8 +78,10 @@ struct BadgerDetailView: View {
             Button { Task { await engine.markDone(badger.id) } } label: {
                 Label("Done", systemImage: "checkmark.circle.fill")
             }
-            Button { Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
-                Label("Snooze \(BadgerConfig.defaultSnoozeMinutes)m", systemImage: "moon.zzz.fill")
+            if badger.state != .snoozed {
+                Button { Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
+                    Label("Snooze \(BadgerConfig.defaultSnoozeMinutes)m", systemImage: "moon.zzz.fill")
+                }
             }
             Button(role: .destructive) { confirmingStop = true } label: {
                 Label("Stop", systemImage: "stop.circle.fill")

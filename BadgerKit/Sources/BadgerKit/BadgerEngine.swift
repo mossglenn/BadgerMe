@@ -89,7 +89,12 @@ public final class BadgerEngine {
     }
 
     public func markDone(_ id: UUID) async { await dispatch(.userMarkedDone, toBadgerID: id) }
+    /// Snooze a Badger. Snoozing one that is ALREADY snoozed is a no-op (D6 clarification, M7): a
+    /// re-snooze must not re-log `userSnoozed`, must not bump `snoozeCount` toward the escalation
+    /// cap, and must not silently shift the wake. D6's max-snooze escalation is about re-snoozing
+    /// alarms that keep firing, not rapid re-taps on an already-quiet Badger.
     public func snooze(_ id: UUID, duration: TimeInterval) async {
+        if fetch(id)?.state == .snoozed { return }
         await dispatch(.userSnoozed(duration: duration), toBadgerID: id)
     }
     public func stop(_ id: UUID) async { await dispatch(.userStopped, toBadgerID: id) }

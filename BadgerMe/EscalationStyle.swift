@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import BadgerKit
 
 enum EscalationStyle {
@@ -57,12 +58,21 @@ enum EscalationStyle {
 }
 
 extension Badger {
+    /// True while the model is still attached to a context. After delete + save a SwiftUI view can
+    /// briefly still hold the object; touching a relationship (`ladder.rungs`) on a detached model
+    /// traps ("backing data was detached… without resolving attribute faults"), so guard on this.
+    var isLive: Bool { modelContext != nil }
+
     /// Total rungs in the bound ladder (min 1 for the repeat-interval fallback).
-    var totalLevels: Int { max(1, ladder?.rungs.count ?? 1) }
+    var totalLevels: Int {
+        guard isLive else { return 1 }
+        return max(1, ladder?.rungs.count ?? 1)
+    }
 
     /// This Badger's live escalation tone, via the pure palette.
     var escalationTone: EscalationTone {
-        EscalationPalette.tone(
+        guard isLive else { return .muted }
+        return EscalationPalette.tone(
             phase: EscalationStyle.phase(state: state, currentLevel: currentLevel, totalLevels: totalLevels),
             level: currentLevel, totalLevels: totalLevels, isStale: false)
     }
@@ -74,6 +84,7 @@ extension Badger {
 
     /// A short, user-facing status line, shared by the list row and the detail header.
     var statusText: String {
+        guard isLive else { return "" }
         switch state {
         case .pending: return "Pending"
         case .active:

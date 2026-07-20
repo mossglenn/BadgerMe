@@ -46,7 +46,7 @@ struct ContentView: View {
                                 }
                             }
                             .swipeActions(edge: .leading) {
-                                if !badger.isTerminal {
+                                if !badger.isTerminal && badger.state != .snoozed {
                                     Button { Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
                                         Label("Snooze", systemImage: "moon.zzz.fill")
                                     }.tint(.indigo)

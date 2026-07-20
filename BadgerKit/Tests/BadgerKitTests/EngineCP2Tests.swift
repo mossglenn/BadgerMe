@@ -93,4 +93,35 @@ struct EngineCP2Tests {
         #expect(BadgerConfig.sanitizedSnoozeOptions([]) == BadgerConfig.fallbackSnoozeOptions)
         #expect(BadgerConfig.sanitizedSnoozeOptions([-1, 0]) == BadgerConfig.fallbackSnoozeOptions)
     }
+
+    // MARK: - Re-snooze no-op (D6 clarification, M7)
+
+    @Test("snoozing an already-snoozed Badger is a no-op — no extra event, no snoozeCount bump")
+    func reSnoozeIsNoOp() async throws {
+        let c = try makeModelContainer(inMemory: true)
+        let engine = makeEngine(c, FakeChannel())
+        let id = await engine.create(title: "b", startAt: at(0), rungs: ladder, maxSnoozeCount: 1)
+
+        await engine.snooze(id, duration: 120)
+        #expect(fetchBadger(id, c)?.state == .snoozed)
+        let count1 = fetchBadger(id, c)?.snoozeCount
+        #expect(count1 == 1)
+        #expect(snoozeEventCount(id, c) == 1)
+
+        await engine.snooze(id, duration: 120)     // already snoozed → ignored
+        #expect(fetchBadger(id, c)?.state == .snoozed)
+        #expect(fetchBadger(id, c)?.snoozeCount == count1)   // not bumped
+        #expect(snoozeEventCount(id, c) == 1)                // still exactly one userSnoozed
+    }
+
+    private func fetchBadger(_ id: UUID, _ c: ModelContainer) -> Badger? {
+        var fd = FetchDescriptor<Badger>(predicate: #Predicate { $0.id == id })
+        fd.fetchLimit = 1
+        return (try? ModelContext(c).fetch(fd))?.first
+    }
+
+    private func snoozeEventCount(_ id: UUID, _ c: ModelContainer) -> Int {
+        let all = (try? ModelContext(c).fetch(FetchDescriptor<EventRecord>())) ?? []
+        return all.filter { $0.badgerID == id && $0.kindRaw == "userSnoozed" }.count
+    }
 }
