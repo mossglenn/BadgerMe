@@ -83,11 +83,13 @@ public enum BadgerConfig {
 
     // MARK: - Concurrency cap (M7 CP3 / D3)
 
-    /// Max concurrently-escalating (non-terminal) Badgers (D3). Conservative pin; CP6 retunes it
-    /// against the measured LA concurrent ceiling + the 64-pending-notification budget. The console
-    /// blocks new activations at this count; engine-level enforcement (bounding Shortcuts/Siri too)
-    /// is a later checkpoint.
-    public static let maxConcurrentEscalating = 6
+    /// Max concurrently-escalating (non-terminal) Badgers (D3). Set to the measured **foreground
+    /// Live Activity concurrent ceiling (5, CP6 device probe)** so every escalating Badger keeps its
+    /// own ambient card (§12) — a 6th would silently fail `Activity.request` and escalate without a
+    /// card. The 64-pending-notification budget is the other bound (looser; mitigated by
+    /// reconcile-replenish). The console blocks new activations at this count. D1 hybrid-overflow
+    /// (collapse the extras into one summary activity) would allow more and is a post-v1 option.
+    public static let maxConcurrentEscalating = 5
 
     // MARK: - Onboarding (M7 CP5)
 

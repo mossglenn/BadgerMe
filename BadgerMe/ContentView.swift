@@ -135,6 +135,12 @@ extension ContentView {
             if let ceilingResult {
                 Text(ceilingResult).font(.caption.monospaced()).foregroundStyle(.secondary)
             }
+            Button("Probe Live Activity ceiling (D1 / D3)") {
+                Task {
+                    ceilingResult = "probing LA…"
+                    ceilingResult = await LAProbe.measureCeiling()
+                }
+            }
             Button("Near-future probe — alarms @ 5 / 15 / 30s (B2 / SP13)") {
                 Task {
                     for t: TimeInterval in [5, 15, 30] {
