@@ -1,11 +1,11 @@
 //
 //  EscalationStyle.swift
-//  BadgerMe — SwiftUI adapter over BadgerKit's pure EscalationPalette (§16, M7 CP3).
+//  BadgerMe — the console's phase derivation over BadgerKit's escalation palette (§16).
 //
-//  The palette DECIDES a tone (Foundation-only, tested); this maps tone + identity-tint token to a
-//  concrete Color for the console. It duplicates the widget's private resolveTint for now; a later
-//  checkpoint (CP6) unifies the widget's copies onto a single shared adapter. Colour is always
-//  paired with a text/symbol status in the views (never colour-only) for accessibility (§16).
+//  The palette DECIDES a tone and BadgerKit maps tone → Color (EscalationPalette+Color, shared with
+//  the widget/Live Activity — CP6). This file only adds the console-specific bit: deriving an
+//  ambient phase from a persisted Badger's stored state (the console has no live LA phase). Colour
+//  is always paired with a text/symbol status in the views (never colour-only) for accessibility.
 //
 
 import SwiftUI
@@ -13,37 +13,6 @@ import SwiftData
 import BadgerKit
 
 enum EscalationStyle {
-    /// Resolve a Badger identity-tint token (from EscalationPalette.identityTints) to a Color.
-    static func tintColor(_ token: String?) -> Color {
-        switch token {
-        case "red":          return .red
-        case "orange":       return .orange
-        case "yellow":       return .yellow
-        case "green":        return .green
-        case "mint":         return .mint
-        case "teal":         return .teal
-        case "cyan":         return .cyan
-        case "blue":         return .blue
-        case "indigo":       return .indigo
-        case "purple":       return .purple
-        case "pink":         return .pink
-        case "brown":        return .brown
-        case "gray", "grey": return .gray
-        default:             return .accentColor
-        }
-    }
-
-    /// Map an escalation tone to a colour; `.identity` resolves the Badger's own tint token.
-    static func color(_ tone: EscalationTone, tint: String?) -> Color {
-        switch tone {
-        case .identity: return tintColor(tint)
-        case .warm:     return .orange
-        case .hot:      return .red
-        case .muted:    return .gray
-        case .overdue:  return .orange
-        }
-    }
-
     /// Derive the ambient phase from a persisted Badger's state (the console has no live LA phase).
     /// `active` at the last rung is the repeating tail. `isStale` is false in the console (live view).
     static func phase(state: StoredBadgerState, currentLevel: Int, totalLevels: Int) -> BadgerActivityPhase {
@@ -78,7 +47,7 @@ extension Badger {
     }
 
     /// The colour for this Badger's status indicator (paired with text/symbol in the UI).
-    var escalationColor: Color { EscalationStyle.color(escalationTone, tint: tint) }
+    var escalationColor: Color { escalationTone.color(tint: tint) }
 
     var isTerminal: Bool { state == .done || state == .stopped }
 

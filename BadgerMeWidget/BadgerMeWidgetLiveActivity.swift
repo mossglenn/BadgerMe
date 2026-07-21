@@ -147,47 +147,15 @@ private func isEscalating(_ phase: BadgerActivityAttributes.Phase) -> Bool {
     AmbientPresentation.isEscalating(phase)
 }
 
-// MARK: - Escalation color (§16, code review #6)
+// MARK: - Escalation color (§16, unified onto EscalationPalette — CP6)
 
-/// The ambient card icon color: the Badger's identity tint at rest, warming to orange
-/// mid-ladder and hot red at the repeating tail; muted grey when snoozed or terminal;
-/// orange when the system has flipped the card to overdue. Keeps per-Badger identity
-/// rather than overriding it with a per-rung rainbow.
+/// The ambient card colour, via the shared escalation palette (`EscalationPalette.tone` → Color),
+/// so the Live Activity and console agree. Overdue, the cool→warm→hot heat ramp, and muting are all
+/// decided inside the palette — no bespoke resolver here anymore.
 private func escalationTint(_ context: ActivityViewContext<BadgerActivityAttributes>) -> Color {
-    let s = context.state
-    if context.isStale, isEscalating(s.phase) { return .orange }          // overdue warning
-    switch s.phase {
-    case .snoozed, .done, .stopped: return .gray                          // muted
-    case .repeating:                return .red                           // hottest / insistent
-    case .armed:                    return resolveTint(context.attributes.tint)
-    case .escalating, .overdue:
-        return escalatingHeat(level: s.currentLevelIndex, total: s.totalLevels,
-                              base: resolveTint(context.attributes.tint))
-    }
-}
-
-/// Cool-to-warm ramp across the escalating rungs; the repeating tail is red (handled above).
-private func escalatingHeat(level: Int, total: Int, base: Color) -> Color {
-    guard total > 1 else { return base }                                  // single-rung: no ramp
-    return Double(level) / Double(total - 1) < 0.5 ? base : .orange
-}
-
-/// Resolve a Badger tint token (accent, red, teal, ...) to a Color; unknown -> app accent.
-private func resolveTint(_ token: String?) -> Color {
-    switch token {
-    case "red":          return .red
-    case "orange":       return .orange
-    case "yellow":       return .yellow
-    case "green":        return .green
-    case "mint":         return .mint
-    case "teal":         return .teal
-    case "cyan":         return .cyan
-    case "blue":         return .blue
-    case "indigo":       return .indigo
-    case "purple":       return .purple
-    case "pink":         return .pink
-    case "brown":        return .brown
-    case "gray", "grey": return .gray
-    default:             return .accentColor
-    }
+    EscalationPalette.tone(phase: context.state.phase,
+                           level: context.state.currentLevelIndex,
+                           totalLevels: context.state.totalLevels,
+                           isStale: context.isStale)
+        .color(tint: context.attributes.tint)
 }

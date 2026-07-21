@@ -88,18 +88,8 @@ struct BadgerWidgetView: View {
         }
     }
 
-    /// Map a stored tint token to a color; unknown/`accent` → the accent color (§16).
-    private func tintColor(_ token: String) -> Color {
-        switch token {
-        case "red":    return .red
-        case "orange": return .orange
-        case "yellow": return .yellow
-        case "green":  return .green
-        case "teal":   return .teal
-        case "blue":   return .blue
-        default:       return .accentColor
-        }
-    }
+    /// Map a stored tint token to a color via the shared escalation palette (§16, CP6).
+    private func tintColor(_ token: String) -> Color { EscalationPalette.tintColor(token) }
 }
 
 struct BadgerMeWidget: Widget {
