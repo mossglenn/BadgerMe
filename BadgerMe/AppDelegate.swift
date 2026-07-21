@@ -66,12 +66,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.setNotificationCategories([BadgerNotifications.category()])
-        Task { _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge]) }
-        #if canImport(AlarmKit)
-        // AlarmKit auth is self-service (SP1) — no Apple approval. Needed before any hard
-        // rung can arm; full permission onboarding with rationale is M7/§17.
-        Task { _ = try? await AlarmManager.shared.requestAuthorization() }
-        #endif
+        // Auth is requested with rationale by the M7/§17 onboarding flow (OnboardingView), not
+        // fire-and-forget here — so the system prompts appear with context on first launch.
         // Rehydrate the AlarmKit owner map from persisted armedAlarms BEFORE observing, so a
         // prior-process alarm firing is attributed after a relaunch (M3 cold-kill fix, ckpt 4).
         Task { @MainActor in

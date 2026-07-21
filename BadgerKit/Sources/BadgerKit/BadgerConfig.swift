@@ -88,4 +88,15 @@ public enum BadgerConfig {
     /// blocks new activations at this count; engine-level enforcement (bounding Shortcuts/Siri too)
     /// is a later checkpoint.
     public static let maxConcurrentEscalating = 6
+
+    // MARK: - Onboarding (M7 CP5)
+
+    private static let onboardedKey = "hasCompletedOnboarding"
+
+    /// Whether the first-launch permission onboarding has been completed (§17). Set once the flow
+    /// finishes; gates whether the app shows onboarding or the console.
+    public static var hasCompletedOnboarding: Bool {
+        get { store?.bool(forKey: onboardedKey) ?? false }
+        set { store?.set(newValue, forKey: onboardedKey) }
+    }
 }

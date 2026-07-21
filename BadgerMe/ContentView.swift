@@ -11,12 +11,13 @@ import BadgerKit
 
 struct ContentView: View {
     let engine: BadgerEngine
+    let permissions: Permissions
     /// DEBUG diagnostic (SP9/B1): probe the per-app AlarmKit alarm ceiling. nil in release.
     var probeCeiling: (@Sendable () async -> Int)? = nil
 
     @Query(sort: \Badger.createdAt, order: .reverse) private var badgers: [Badger]
     @State private var showCreate = false
-    @State private var showLadders = false
+    @State private var showSettings = false
     #if DEBUG
     @Query(sort: \EventRecord.timestamp, order: .reverse) private var events: [EventRecord]
     @State private var ceilingResult: String?
@@ -66,8 +67,8 @@ struct ContentView: View {
             .navigationTitle("BadgerMe")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showLadders = true } label: { Image(systemName: "square.stack.3d.up") }
-                        .accessibilityLabel("Ladders")
+                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                        .accessibilityLabel("Settings")
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showCreate = true } label: { Image(systemName: "plus") }
@@ -76,7 +77,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showCreate) { CreateBadgerView(engine: engine) }
-            .sheet(isPresented: $showLadders) { LadderListView(engine: engine) }
+            .sheet(isPresented: $showSettings) { SettingsView(engine: engine, permissions: permissions) }
         }
         .task { await engine.reconcileAll() }
     }

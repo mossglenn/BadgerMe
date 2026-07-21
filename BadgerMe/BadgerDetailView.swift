@@ -103,8 +103,14 @@ struct BadgerDetailView: View {
                 Label("Done", systemImage: "checkmark.circle.fill")
             }
             if badger.state != .snoozed {
-                Button { Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
-                    Label("Snooze \(BadgerConfig.defaultSnoozeMinutes)m", systemImage: "moon.zzz.fill")
+                Menu {
+                    ForEach(BadgerConfig.snoozeOptionsMinutes, id: \.self) { mins in
+                        Button("\(mins) min") {
+                            Task { await engine.snooze(badger.id, duration: TimeInterval(mins * 60)) }
+                        }
+                    }
+                } label: {
+                    Label("Snooze…", systemImage: "moon.zzz.fill")
                 }
             }
             Button(role: .destructive) { confirmingStop = true } label: {

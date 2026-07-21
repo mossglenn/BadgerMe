@@ -1,7 +1,8 @@
 //
 //  LadderListView.swift
 //  BadgerMe — manage reusable ladder templates (§16, M7 CP4). Reads templates via @Query; create,
-//  edit (user), duplicate (built-in), and delete (user) all route through the engine.
+//  edit (user), duplicate (built-in), and delete (user) all route through the engine. Pushed from
+//  Settings ▸ Ladders (CP5), so it's a plain view, not its own NavigationStack.
 //
 
 import SwiftUI
@@ -10,39 +11,35 @@ import BadgerKit
 
 struct LadderListView: View {
     let engine: BadgerEngine
-    @Environment(\.dismiss) private var dismiss
     @Query(sort: \LadderTemplate.name) private var templates: [LadderTemplate]
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(templates) { t in
-                        NavigationLink {
-                            LadderEditorView(engine: engine, templateID: t.id, name: t.name,
-                                             rungs: Self.editRungs(from: t),
-                                             maxSnooze: t.defaultMaxSnoozeCount, isBuiltIn: t.isBuiltIn)
-                        } label: {
-                            LadderRow(template: t)
-                        }
-                    }
-                    .onDelete(perform: deleteUserTemplates)
-                } footer: {
-                    Text("Built-in ladders can't be edited — duplicate one to customise it.")
-                }
-            }
-            .navigationTitle("Ladders")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
-                ToolbarItem(placement: .primaryAction) {
+        List {
+            Section {
+                ForEach(templates) { t in
                     NavigationLink {
-                        LadderEditorView(engine: engine, templateID: nil, name: "",
-                                         rungs: [EditRung(delayMinutes: 0, prominence: .active,
-                                                          soundRef: SoundCatalog.ahem.soundRef)],
-                                         maxSnooze: 1, isBuiltIn: false)
-                    } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("New ladder")
+                        LadderEditorView(engine: engine, templateID: t.id, name: t.name,
+                                         rungs: Self.editRungs(from: t),
+                                         maxSnooze: t.defaultMaxSnoozeCount, isBuiltIn: t.isBuiltIn)
+                    } label: {
+                        LadderRow(template: t)
+                    }
                 }
+                .onDelete(perform: deleteUserTemplates)
+            } footer: {
+                Text("Built-in ladders can't be edited — duplicate one to customise it.")
+            }
+        }
+        .navigationTitle("Ladders")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    LadderEditorView(engine: engine, templateID: nil, name: "",
+                                     rungs: [EditRung(delayMinutes: 0, prominence: .active,
+                                                      soundRef: SoundCatalog.ahem.soundRef)],
+                                     maxSnooze: 1, isBuiltIn: false)
+                } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("New ladder")
             }
         }
     }

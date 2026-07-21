@@ -17,12 +17,40 @@ struct BadgerMeApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            ContentView(engine: appDelegate.engine, probeCeiling: appDelegate.debugProbeCeiling)
+            RootView(engine: appDelegate.engine, probeCeiling: appDelegate.debugProbeCeiling)
             #else
-            ContentView(engine: appDelegate.engine)
+            RootView(engine: appDelegate.engine)
             #endif
         }
         // Same container the engine writes to, so @Query reflects engine saves live.
         .modelContainer(appDelegate.container)
+    }
+}
+
+/// Gates first-launch permission onboarding (§17) in front of the console, and owns the shared
+/// `Permissions` model that onboarding and Settings both drive.
+struct RootView: View {
+    let engine: BadgerEngine
+    var probeCeiling: (@Sendable () async -> Int)? = nil
+
+    @State private var permissions = Permissions()
+    @State private var onboarded = BadgerConfig.hasCompletedOnboarding
+
+    var body: some View {
+        Group {
+            if onboarded {
+                #if DEBUG
+                ContentView(engine: engine, permissions: permissions, probeCeiling: probeCeiling)
+                #else
+                ContentView(engine: engine, permissions: permissions)
+                #endif
+            } else {
+                OnboardingView(permissions: permissions) {
+                    BadgerConfig.hasCompletedOnboarding = true
+                    onboarded = true
+                }
+            }
+        }
+        .task { await permissions.refresh() }
     }
 }
