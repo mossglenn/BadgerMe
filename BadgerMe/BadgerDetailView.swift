@@ -66,11 +66,12 @@ struct BadgerDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Stop badgering \(badger.title)?", isPresented: $confirmingStop,
                             titleVisibility: .visible) {
-            Button("Stop", role: .destructive) { Task { await engine.stop(badger.id) } }
+            Button("Stop", role: .destructive) { Haptics.impact(.heavy); Task { await engine.stop(badger.id) } }
         } message: { Text("Escalation stops; the Badger is kept in your history.") }
         .confirmationDialog("Delete \(badger.title)?", isPresented: $confirmingDelete,
                             titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
+                Haptics.impact(.heavy)
                 let id = badger.id       // capture before the model detaches
                 dismiss()                // pop the detail view first, then delete
                 Task { await engine.delete(id) }
@@ -99,13 +100,14 @@ struct BadgerDetailView: View {
 
     @ViewBuilder private var actions: some View {
         if !badger.isTerminal {
-            Button { Task { await engine.markDone(badger.id) } } label: {
+            Button { Haptics.success(); Task { await engine.markDone(badger.id) } } label: {
                 Label("Done", systemImage: "checkmark.circle.fill")
             }
             if badger.state != .snoozed {
                 Menu {
                     ForEach(BadgerConfig.snoozeOptionsMinutes, id: \.self) { mins in
                         Button("\(mins) min") {
+                            Haptics.impact(.light)
                             Task { await engine.snooze(badger.id, duration: TimeInterval(mins * 60)) }
                         }
                     }
@@ -117,7 +119,7 @@ struct BadgerDetailView: View {
                 Label("Stop", systemImage: "stop.circle.fill")
             }
         } else {
-            Button { Task { _ = await engine.replace(badger.id) } } label: {
+            Button { Haptics.impact(.medium); Task { _ = await engine.replace(badger.id) } } label: {
                 Label("Run again", systemImage: "arrow.clockwise.circle.fill")
             }
         }

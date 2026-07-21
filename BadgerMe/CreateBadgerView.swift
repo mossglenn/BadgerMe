@@ -63,6 +63,7 @@ struct CreateBadgerView: View {
     }
 
     private func create() {
+        Haptics.impact(.medium)
         let t = trimmedTitle
         let n = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         let chosenID = selected?.id ?? ladderID

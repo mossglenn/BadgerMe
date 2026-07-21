@@ -42,14 +42,14 @@ struct ContentView: View {
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: !badger.isTerminal) {
                                 if !badger.isTerminal {
-                                    Button { Task { await engine.markDone(badger.id) } } label: {
+                                    Button { Haptics.success(); Task { await engine.markDone(badger.id) } } label: {
                                         Label("Done", systemImage: "checkmark.circle.fill")
                                     }.tint(.green)
                                 }
                             }
                             .swipeActions(edge: .leading) {
                                 if !badger.isTerminal && badger.state != .snoozed {
-                                    Button { Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
+                                    Button { Haptics.impact(.light); Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
                                         Label("Snooze", systemImage: "moon.zzz.fill")
                                     }.tint(.indigo)
                                 }
