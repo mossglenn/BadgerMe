@@ -27,6 +27,18 @@ struct BadgerDetailView: View {
     }
 
     var body: some View {
+        // Gate the whole screen on a live model: after Delete the badger detaches, and any stray
+        // re-render must touch NO stored/relationship property (title/notes/focusTags/ladder) or
+        // SwiftData faults ("backing data detached… without resolving attribute faults"). Rendering
+        // nothing here supersedes per-property guards for this view.
+        if badger.isLive {
+            content
+        } else {
+            Color.clear
+        }
+    }
+
+    private var content: some View {
         List {
             Section { header }
             Section { actions }
