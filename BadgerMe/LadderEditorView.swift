@@ -51,11 +51,42 @@ struct LadderEditorView: View {
             Section("Name") {
                 TextField("Ladder name", text: $name).disabled(isBuiltIn)
             }
-            Section("Rungs (each delay is the wait after the previous)") {
-                ForEach($rungs) { $rung in RungEditor(rung: $rung, disabled: isBuiltIn) }
-                    .onDelete { if !isBuiltIn { rungs.remove(atOffsets: $0) } }
-                if !isBuiltIn {
+            ForEach($rungs) { $rung in
+                Section {
+                    HStack {
+                        Text("Wait").foregroundStyle(.secondary)
+                        Stepper("\(Int(rung.delayMinutes)) min",
+                                value: $rung.delayMinutes, in: 0...1440, step: 1)
+                    }
+                    Picker("Prominence", selection: $rung.prominence) {
+                        Text("Notify").tag(BadgerKit.Prominence.active)
+                        Text("Time-sensitive").tag(BadgerKit.Prominence.timeSensitive)
+                        Text("Alarm (breakthrough)").tag(BadgerKit.Prominence.breakthrough)
+                    }
+                    NavigationLink {
+                        SoundPickerView(selection: $rung.soundRef)
+                    } label: {
+                        HStack {
+                            Text("Sound")
+                            Spacer()
+                            Text(ConsoleFormat.soundName(rung.soundRef)).foregroundStyle(.secondary)
+                        }
+                    }
+                    if !isBuiltIn {
+                        Button(role: .destructive) {
+                            rungs.removeAll { $0.id == rung.id }
+                        } label: { Text("Remove rung") }
+                    }
+                } header: {
+                    Text("Rung \(number(of: rung))")
+                }
+                .disabled(isBuiltIn)
+            }
+            if !isBuiltIn {
+                Section {
                     Button { addRung() } label: { Label("Add rung", systemImage: "plus") }
+                } footer: {
+                    Text("Each rung's delay is the wait after the previous rung fires (the first is measured from the Badger's start).")
                 }
             }
             Section("Snooze budget") {
@@ -85,6 +116,10 @@ struct LadderEditorView: View {
                               prominence: .timeSensitive, soundRef: SoundCatalog.badger.soundRef))
     }
 
+    private func number(of rung: EditRung) -> Int {
+        (rungs.firstIndex { $0.id == rung.id } ?? 0) + 1
+    }
+
     private func specs() -> [RungSpec] {
         rungs.map { r in
             let channel = r.prominence == .breakthrough ? "alarmkit" : "notification"
@@ -104,35 +139,5 @@ struct LadderEditorView: View {
     private func duplicate() {
         engine.saveTemplate(name: name + " copy", rungs: specs(), maxSnoozeCount: maxSnooze)
         dismiss()
-    }
-}
-
-private struct RungEditor: View {
-    @Binding var rung: EditRung
-    let disabled: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Wait").foregroundStyle(.secondary)
-                Stepper("\(Int(rung.delayMinutes)) min", value: $rung.delayMinutes, in: 0...1440, step: 1)
-            }
-            Picker("Prominence", selection: $rung.prominence) {
-                Text("Notify").tag(BadgerKit.Prominence.active)
-                Text("Time-sensitive").tag(BadgerKit.Prominence.timeSensitive)
-                Text("Alarm (breakthrough)").tag(BadgerKit.Prominence.breakthrough)
-            }
-            NavigationLink {
-                SoundPickerView(selection: $rung.soundRef)
-            } label: {
-                HStack {
-                    Text("Sound")
-                    Spacer()
-                    Text(ConsoleFormat.soundName(rung.soundRef)).foregroundStyle(.secondary)
-                }
-            }
-        }
-        .disabled(disabled)
-        .accessibilityElement(children: .contain)
     }
 }
