@@ -49,6 +49,10 @@ extension Badger {
     /// The colour for this Badger's status indicator (paired with text/symbol in the UI).
     var escalationColor: Color { escalationTone.color(tint: tint) }
 
+    /// The identity glyph (SHAPE = which Badger; colour = heat, applied separately). Falls back
+    /// to a paw until the per-Badger icon picker ships (deferred, P2).
+    var identityIcon: String { iconName ?? "pawprint.fill" }
+
     var isTerminal: Bool { state == .done || state == .stopped }
 
     /// A short, user-facing status line, shared by the list row and the detail header.

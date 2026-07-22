@@ -30,8 +30,18 @@ struct ContentView: View {
         NavigationStack {
             List {
                 if badgers.isEmpty {
-                    ContentUnavailableView("No Badgers", systemImage: "bell.slash",
-                        description: Text("Tap + to start badgering yourself about something."))
+                    ContentUnavailableView {
+                        Label("Nothing's badgering you", systemImage: "pawprint")
+                    } description: {
+                        Text("Add a Badger and it'll keep after you about something you'd otherwise let slide.")
+                            .font(.badgerVoice(.callout))
+                    } actions: {
+                        Button { Haptics.impact(.light); showCreate = true } label: {
+                            Label("New Badger", systemImage: "plus")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(DesignTokens.accent)
+                    }
                 } else {
                     Section {
                         ForEach(badgers) { badger in
@@ -44,14 +54,14 @@ struct ContentView: View {
                                 if !badger.isTerminal {
                                     Button { Haptics.success(); Task { await engine.markDone(badger.id) } } label: {
                                         Label("Done", systemImage: "checkmark.circle.fill")
-                                    }.tint(.green)
+                                    }.tint(DesignTokens.positive)
                                 }
                             }
                             .swipeActions(edge: .leading) {
                                 if !badger.isTerminal && badger.state != .snoozed {
                                     Button { Haptics.impact(.light); Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
                                         Label("Snooze", systemImage: "moon.zzz.fill")
-                                    }.tint(.indigo)
+                                    }.tint(DesignTokens.accent)
                                 }
                             }
                         }
@@ -65,15 +75,14 @@ struct ContentView: View {
                 #endif
             }
             .navigationTitle("BadgerMe")
+            .safeAreaInset(edge: .bottom) {
+                if !badgers.isEmpty { newBadgerButton }
+            }
+            .refreshable { await engine.reconcileAll() }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel("Settings")
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button { showCreate = true } label: { Image(systemName: "plus") }
-                        .disabled(atCap)
-                        .accessibilityLabel("New Badger")
                 }
             }
             .sheet(isPresented: $showCreate) { CreateBadgerView(engine: engine) }
@@ -87,22 +96,43 @@ struct ContentView: View {
               systemImage: "pawprint.fill")
             .font(.footnote)
     }
+
+    private var newBadgerButton: some View {
+        Button {
+            Haptics.impact(.light)
+            showCreate = true
+        } label: {
+            Label("New Badger", systemImage: "plus")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Space.xs)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(DesignTokens.accent)
+        .disabled(atCap)
+        .padding(.horizontal, Space.screenMargin)
+        .padding(.bottom, Space.xs)
+        .accessibilityLabel("New Badger")
+    }
 }
 
 private struct BadgerRow: View {
     let badger: Badger
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "circle.fill")
-                .imageScale(.small)
+        HStack(spacing: Space.sm) {
+            Image(systemName: badger.identityIcon)
+                .imageScale(.medium)
                 .foregroundStyle(badger.escalationColor)
+                .frame(width: Space.xl)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(badger.title).font(.headline)
-                Text(badger.statusText).font(.caption).foregroundStyle(.secondary)
+                Text(badger.statusText).font(.subheadline).foregroundStyle(.secondary)
             }
         }
+        .animation(reduceMotion ? nil : Motion.standard, value: badger.escalationTone)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(badger.title), \(badger.statusText)")
     }
