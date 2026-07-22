@@ -18,6 +18,7 @@ struct ContentView: View {
     @Query(sort: \Badger.createdAt, order: .reverse) private var badgers: [Badger]
     @State private var showCreate = false
     @State private var showSettings = false
+    @Namespace private var heroNS
     #if DEBUG
     @Query(sort: \EventRecord.timestamp, order: .reverse) private var events: [EventRecord]
     @State private var ceilingResult: String?
@@ -46,10 +47,11 @@ struct ContentView: View {
                     Section {
                         ForEach(badgers) { badger in
                             NavigationLink {
-                                BadgerDetailView(badger: badger, engine: engine)
+                                BadgerDetailView(badger: badger, engine: engine, heroNamespace: heroNS)
                             } label: {
                                 BadgerRow(badger: badger)
                             }
+                            .matchedTransitionSource(id: badger.id, in: heroNS)
                             .swipeActions(edge: .trailing, allowsFullSwipe: !badger.isTerminal) {
                                 if !badger.isTerminal {
                                     Button { Haptics.success(); Task { await engine.markDone(badger.id) } } label: {
