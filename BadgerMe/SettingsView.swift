@@ -106,8 +106,9 @@ struct SettingsView: View {
             Spacer()
             Label(status, systemImage: ok ? "checkmark.circle.fill" : "exclamationmark.circle")
                 .labelStyle(.titleAndIcon)
-                .foregroundStyle(ok ? Color.green : .secondary)
+                .foregroundStyle(ok ? DesignTokens.positive : DesignTokens.escWarn)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private func addOption() {
