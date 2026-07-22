@@ -46,6 +46,25 @@ public enum EscalationPalette {
         return Double(level) / Double(total - 1) < 0.5 ? .identity : .warm
     }
 
+    /// Derive the ambient phase from a persisted Badger's state (the console + the widget reader
+    /// share this). `active` at the last rung is the repeating tail.
+    public static func phase(state: StoredBadgerState, currentLevel: Int, totalLevels: Int) -> BadgerActivityPhase {
+        switch state {
+        case .pending: return .armed
+        case .active:  return currentLevel >= max(0, totalLevels - 1) ? .repeating : .escalating
+        case .snoozed: return .snoozed
+        case .done:    return .done
+        case .stopped: return .stopped
+        }
+    }
+
+    /// Tone straight from a persisted Badger's fields (glance / widget-reader convenience).
+    public static func tone(state: StoredBadgerState, currentLevel: Int, totalLevels: Int,
+                            isStale: Bool = false) -> EscalationTone {
+        tone(phase: phase(state: state, currentLevel: currentLevel, totalLevels: totalLevels),
+             level: currentLevel, totalLevels: totalLevels, isStale: isStale)
+    }
+
     /// Canonical identity tint vocabulary (§16): the tokens the create/edit picker offers and
     /// every surface's token → Color resolver understands. `accent` is the default/fallback and
     /// is a superset of both current widget resolvers, so they can unify onto this.
