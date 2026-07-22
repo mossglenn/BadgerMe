@@ -12,6 +12,8 @@ import BadgerKit
 struct ContentView: View {
     let engine: BadgerEngine
     let permissions: Permissions
+    /// Set once by RootView after onboarding's "Create your first Badger" — auto-opens create.
+    var startCreating: Bool = false
     /// DEBUG diagnostic (SP9/B1): probe the per-app AlarmKit alarm ceiling. nil in release.
     var probeCeiling: (@Sendable () async -> Int)? = nil
 
@@ -19,6 +21,7 @@ struct ContentView: View {
     @State private var showCreate = false
     @State private var showSettings = false
     @Namespace private var heroNS
+    @State private var didAutoCreate = false
     #if DEBUG
     @Query(sort: \EventRecord.timestamp, order: .reverse) private var events: [EventRecord]
     @State private var ceilingResult: String?
@@ -91,6 +94,7 @@ struct ContentView: View {
             .sheet(isPresented: $showSettings) { SettingsView(engine: engine, permissions: permissions) }
         }
         .task { await engine.reconcileAll() }
+        .onAppear { if startCreating && !didAutoCreate { didAutoCreate = true; showCreate = true } }
     }
 
     private var capFooter: some View {
