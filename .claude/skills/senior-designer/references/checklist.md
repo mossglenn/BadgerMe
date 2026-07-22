@@ -1,6 +1,6 @@
 # Phase 4 Scored Checklist
 
-Score every applicable item pass/fail against the actual rendered output. Web tasks score the 43 base items. SwiftUI tasks score all 55. Every item is validated 10/10 against the evidence base (see `evidence-base.md` §3 for per-item sources and scoring).
+Score every applicable item pass/fail against the actual rendered output. Web tasks score the 53 base items. SwiftUI tasks score all 65. Every item is validated 10/10 against the evidence base (see `evidence-base.md` §3 for per-item sources and scoring).
 
 ## Typography
 - [ ] T1 Body 16-18px (web) / Dynamic Type styles (SwiftUI); nothing below 12px web / 11pt iOS; mobile web inputs ≥16px
