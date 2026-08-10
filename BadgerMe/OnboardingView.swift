@@ -32,12 +32,17 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         VStack(spacing: Space.md) {
-            Image("badgerpaw.fill").font(.system(size: 56)).foregroundStyle(.tint)
+            Image("badgerhalf")
+                .resizable().scaledToFit().frame(maxWidth: .infinity)
                 .accessibilityHidden(true)
+
             Text("BadgerMe").font(.largeTitle.bold())
             Text("A Badger keeps raising the stakes on a commitment — a ladder of increasingly insistent alerts — until you mark it done. It's meant to be hard to ignore.")
                 .font(.badgerVoice(.body))
                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
+            
+            Image("badgerpaw.fill").font(.system(size: 56)).foregroundStyle(.tint)
+                .accessibilityHidden(true)
             Button("Get started") { step = 1 }
                 .buttonStyle(.borderedProminent).controlSize(.large)
         }

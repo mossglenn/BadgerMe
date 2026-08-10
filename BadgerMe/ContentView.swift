@@ -34,18 +34,31 @@ struct ContentView: View {
         NavigationStack {
             List {
                 if badgers.isEmpty {
-                    ContentUnavailableView {
-                        Label("Nothing's badgering you", image: "badgerpaw")
-                    } description: {
+                    VStack(spacing: Space.md) {
+                        Image("badgerpaw")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        Text("Nothing's badgering you")
+                            .font(.title2.bold())
+                            .multilineTextAlignment(.center)
                         Text("Add a Badger and it'll keep after you about something you'd otherwise let slide.")
                             .font(.badgerVoice(.callout))
-                    } actions: {
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                         Button { Haptics.impact(.light); showCreate = true } label: {
                             Label("New Badger", systemImage: "plus")
+                                .font(.headline)
+                                .foregroundStyle(DesignTokens.onAccent)
+                                .padding(.horizontal, Space.sm)
+                                .padding(.vertical, Space.xxs)
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(DesignTokens.accent)
+                        .padding(.top, Space.xs)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Space.xl)
                 } else {
                     Section {
                         ForEach(badgers) { badger in

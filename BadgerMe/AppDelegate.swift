@@ -64,8 +64,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                      didFinishLaunchingWithOptions launchOptions:
                         [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-uiSeed") {
-            BadgerConfig.hasCompletedOnboarding = true   // land on the console for P4 screenshots
+        let uiArgs = ProcessInfo.processInfo.arguments
+        if uiArgs.contains("-uiSeed") || uiArgs.contains("-uiEmpty") {
+            BadgerConfig.hasCompletedOnboarding = true   // land on the console (P4 screenshots / empty-state)
         }
         #endif
         let center = UNUserNotificationCenter.current()
