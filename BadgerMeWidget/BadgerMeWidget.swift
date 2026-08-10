@@ -60,8 +60,13 @@ struct BadgerWidgetView: View {
     private func active(_ urgent: BadgerWidgetSummary.Item, count: Int) -> some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.xs) {
-                Image(systemName: urgent.iconName ?? "pawprint.fill")
-                    .foregroundStyle(urgent.tone.color())
+                if let iconName = urgent.iconName {
+                    Image(systemName: iconName)
+                        .foregroundStyle(urgent.tone.color())
+                } else {
+                    Image("badgerpaw.fill")
+                        .foregroundStyle(urgent.tone.color())
+                }
                 Text(urgent.title).font(.headline).lineLimit(1)
             }
             countdown(to: urgent.nextFire).font(.title2).monospacedDigit()

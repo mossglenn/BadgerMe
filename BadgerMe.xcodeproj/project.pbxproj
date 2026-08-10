@@ -63,6 +63,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A2701E76302A7CE000DABD80 /* Exceptions for "BadgerMe" folder in "BadgerMeWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+			target = A2D0BA932FFC5ACE00729EFE /* BadgerMeWidgetExtension */;
+		};
 		A2D0BAAC2FFC5AD000729EFE /* Exceptions for "BadgerMeWidget" folder in "BadgerMeWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -84,6 +91,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				A2D0BABC2FFC9F5F00729EFE /* Exceptions for "BadgerMe" folder in "BadgerMe" target */,
+				A2701E76302A7CE000DABD80 /* Exceptions for "BadgerMe" folder in "BadgerMeWidgetExtension" target */,
 			);
 			path = BadgerMe;
 			sourceTree = "<group>";

@@ -23,7 +23,7 @@ struct BadgerMeWidgetLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: ambientIcon(context))
+                    ambientIcon(context)
                         .foregroundStyle(escalationTint(context))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -44,12 +44,12 @@ struct BadgerMeWidgetLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: ambientIcon(context))
+                ambientIcon(context)
                     .foregroundStyle(escalationTint(context))
             } compactTrailing: {
                 AmbientCountdown(context: context).monospacedDigit()
             } minimal: {
-                Image(systemName: ambientIcon(context))
+                ambientIcon(context)
                     .foregroundStyle(escalationTint(context))
             }
         }
@@ -61,7 +61,7 @@ private struct AmbientLockScreenView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.sm) {
-                Image(systemName: ambientIcon(context))
+                ambientIcon(context)
                     .font(.title2)
                     .foregroundStyle(escalationTint(context))
                 VStack(alignment: .leading, spacing: Space.xxs) {
@@ -125,13 +125,14 @@ private func showsActions(_ context: ActivityViewContext<BadgerActivityAttribute
     AmbientPresentation.showsActions(context.state.phase)
 }
 
-private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes>) -> String {
-    if context.isStale, isEscalating(context.state.phase) { return "exclamationmark.triangle.fill" }
+private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes>) -> Image {
+    if context.isStale, isEscalating(context.state.phase) { return Image(systemName: "exclamationmark.triangle.fill") }
     switch context.state.phase {
-    case .done:    return "checkmark.circle.fill"
-    case .stopped: return "xmark.circle.fill"
-    case .snoozed: return "moon.zzz.fill"
-    default:       return context.attributes.iconName ?? "pawprint.fill"   // the Badger SF Symbol
+    case .done:    return Image(systemName: "checkmark.circle.fill")
+    case .stopped: return Image(systemName: "xmark.circle.fill")
+    case .snoozed: return Image(systemName: "moon.zzz.fill")
+    default:       if let name = context.attributes.iconName { return Image(systemName: name) }
+        return Image("badgerpaw.fill")   // the Badger SF Symbol
     }
 }
 

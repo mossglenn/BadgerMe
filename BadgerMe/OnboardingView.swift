@@ -32,7 +32,7 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         VStack(spacing: Space.md) {
-            Image(systemName: "pawprint.fill").font(.system(size: 56)).foregroundStyle(.tint)
+            Image("badgerpaw.fill").font(.system(size: 56)).foregroundStyle(.tint)
                 .accessibilityHidden(true)
             Text("BadgerMe").font(.largeTitle.bold())
             Text("A Badger keeps raising the stakes on a commitment — a ladder of increasingly insistent alerts — until you mark it done. It's meant to be hard to ignore.")
@@ -65,7 +65,7 @@ struct OnboardingView: View {
 
     private var readyStep: some View {
         VStack(spacing: Space.md) {
-            Image(systemName: "pawprint.fill").font(.system(size: 48)).foregroundStyle(.tint)
+            Image("badgerpaw.fill").font(.system(size: 48)).foregroundStyle(.tint)
                 .accessibilityHidden(true)
             Text("You're set").font(.title.bold())
             VStack(alignment: .leading, spacing: Space.sm) {

@@ -35,7 +35,7 @@ struct ContentView: View {
             List {
                 if badgers.isEmpty {
                     ContentUnavailableView {
-                        Label("Nothing's badgering you", systemImage: "pawprint")
+                        Label("Nothing's badgering you", image: "badgerpaw")
                     } description: {
                         Text("Add a Badger and it'll keep after you about something you'd otherwise let slide.")
                             .font(.badgerVoice(.callout))
@@ -99,7 +99,7 @@ struct ContentView: View {
 
     private var capFooter: some View {
         Label("Paws are full — resolve one to add another (\(BadgerConfig.maxConcurrentEscalating) max).",
-              systemImage: "pawprint.fill")
+              image: "badgerpaw.fill")
             .font(.footnote)
     }
 
@@ -128,7 +128,7 @@ private struct BadgerRow: View {
 
     var body: some View {
         HStack(spacing: Space.sm) {
-            Image(systemName: badger.identityIcon)
+            badger.identityImage
                 .imageScale(.medium)
                 .foregroundStyle(badger.escalationColor)
                 .frame(width: Space.xl)

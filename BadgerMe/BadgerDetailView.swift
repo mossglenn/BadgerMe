@@ -88,7 +88,7 @@ struct BadgerDetailView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: Space.sm) {
-            Image(systemName: badger.identityIcon)
+            badger.identityImage
                 .font(.title2)
                 .foregroundStyle(badger.escalationColor)
                 .accessibilityHidden(true)

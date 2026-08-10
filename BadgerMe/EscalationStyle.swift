@@ -45,7 +45,10 @@ extension Badger {
 
     /// The identity glyph (SHAPE = which Badger; colour = heat, applied separately). Falls back
     /// to a paw until the per-Badger icon picker ships (deferred, P2).
-    var identityIcon: String { iconName ?? "pawprint.fill" }
+    var identityImage: Image {
+        if let iconName { return Image(systemName: iconName) }
+        return Image("badgerpaw.fill")
+    }
 
     var isTerminal: Bool { state == .done || state == .stopped }
 
