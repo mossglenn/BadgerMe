@@ -41,7 +41,7 @@ public enum DesignTokens {
     public static let positive        = dyn("#3E7D3F", "#6FB56B")   // Done / all-clear
 
     // MARK: - Brand accent (OFF the escalation ramp; app-icon ground behind the badger)
-    public static let accent          = dyn("#3E5C6E", "#7FA8BC")   // primary actions + wordmark
+    public static let accent          = dyn("#284a5b", "#478ca8")   // primary actions + wordmark
     public static let onAccent        = dyn("#FFFFFF", "#0F1A20")   // label on accent
 
     // MARK: - Dynamic-colour builder

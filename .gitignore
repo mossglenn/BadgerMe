@@ -1,6 +1,9 @@
 # ---- Project-specific ----
 # Local working notes copied from the Claude project; reference only, not part of the app.
 Notes/
+BadgerArt
+BadgerArt/
+BadgerArt/*
 
 # ---- macOS ----
 .DS_Store

@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "badgerme-fullcolor.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "badgerme-dark.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -23,6 +25,7 @@
           "value" : "tinted"
         }
       ],
+      "filename" : "badgerme_tint-reverse.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
