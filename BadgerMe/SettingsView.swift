@@ -14,6 +14,7 @@ import BadgerKit
 struct SettingsView: View {
     let engine: BadgerEngine
     let permissions: Permissions
+    var probeCeiling: (@Sendable () async -> Int)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -90,6 +91,16 @@ struct SettingsView: View {
                 } header: {
                     Text("Help")
                 }
+
+                #if DEBUG
+                Section {
+                    NavigationLink { DeveloperView(engine: engine, probeCeiling: probeCeiling) } label: {
+                        Label("Developer", systemImage: "hammer")
+                    }
+                } header: {
+                    Text("Developer")
+                }
+                #endif
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

@@ -22,10 +22,6 @@ struct ContentView: View {
     @State private var showSettings = false
     @Namespace private var heroNS
     @State private var didAutoCreate = false
-    #if DEBUG
-    @Query(sort: \EventRecord.timestamp, order: .reverse) private var events: [EventRecord]
-    @State private var ceilingResult: String?
-    #endif
 
     private var escalatingCount: Int { badgers.filter { !$0.isTerminal }.count }
     private var atCap: Bool { escalatingCount >= BadgerConfig.maxConcurrentEscalating }
@@ -87,10 +83,6 @@ struct ContentView: View {
                         if atCap { capFooter }
                     }
                 }
-                #if DEBUG
-                debugHarness
-                eventLogSection
-                #endif
             }
             .navigationTitle("BadgerMe")
             .safeAreaInset(edge: .bottom) {
@@ -104,7 +96,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showCreate) { CreateBadgerView(engine: engine) }
-            .sheet(isPresented: $showSettings) { SettingsView(engine: engine, permissions: permissions) }
+            .sheet(isPresented: $showSettings) { SettingsView(engine: engine, permissions: permissions, probeCeiling: probeCeiling) }
         }
         .task { await engine.reconcileAll() }
         .onAppear { if startCreating && !didAutoCreate { didAutoCreate = true; showCreate = true } }
@@ -159,66 +151,6 @@ private struct BadgerRow: View {
 
 #if DEBUG
 extension ContentView {
-    var debugHarness: some View {
-        Section("Dev harness (device-verify)") {
-            Button("New Badger — 10/25/45s notification ladder") {
-                Task { await engine.create(title: "Test Badger", startAt: .now,
-                                            rungs: Self.devNotificationLadder, maxSnoozeCount: 1) }
-            }
-            Button("New Badger — 10/25/45s breakthrough ladder") {
-                Task { await engine.create(title: "AlarmKit Test Badger", startAt: .now,
-                                            rungs: Self.devBreakthroughLadder, maxSnoozeCount: 1) }
-            }
-            Button("Reconcile all (catch up)") { Task { await engine.reconcileAll() } }
-
-            Button("Probe alarm ceiling (B1 / SP9)") {
-                Task {
-                    ceilingResult = "probing…"
-                    if let probe = probeCeiling {
-                        ceilingResult = "ceiling ≈ \(await probe()) alarms"
-                    } else {
-                        ceilingResult = "unavailable (no AlarmKit)"
-                    }
-                }
-            }
-            if let ceilingResult {
-                Text(ceilingResult).font(.caption.monospaced()).foregroundStyle(.secondary)
-            }
-            Button("Probe Live Activity ceiling (D1 / D3)") {
-                Task {
-                    ceilingResult = "probing LA…"
-                    ceilingResult = await LAProbe.measureCeiling()
-                }
-            }
-            Button("Near-future probe — alarms @ 5 / 15 / 30s (B2 / SP13)") {
-                Task {
-                    for t: TimeInterval in [5, 15, 30] {
-                        await engine.create(
-                            title: "NF \(Int(t))s", startAt: .now,
-                            rungs: [RungSpec(index: 0, delay: t,
-                                             actions: [ChannelAction(channelID: "alarmkit",
-                                                                     prominence: .breakthrough)])],
-                            maxSnoozeCount: 1)
-                    }
-                }
-            }
-        }
-    }
-
-    var eventLogSection: some View {
-        Section("Event log (newest first)") {
-            if events.isEmpty {
-                Text("No events yet.").foregroundStyle(.secondary)
-            } else {
-                ForEach(events.prefix(25)) { event in
-                    Text(event.timestamp.formatted(date: .omitted, time: .standard)
-                         + "  " + event.kindRaw + (event.level.map { " L\($0)" } ?? ""))
-                        .font(.caption2.monospaced())
-                }
-            }
-        }
-    }
-
     static var devNotificationLadder: [RungSpec] {
         [
             RungSpec(index: 0, delay: 10, actions: [ChannelAction(channelID: "notification", prominence: .active)]),
