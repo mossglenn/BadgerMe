@@ -37,9 +37,19 @@ struct RootView: View {
     @State private var onboarded = BadgerConfig.hasCompletedOnboarding
     @State private var startCreating = false
 
+    private var debugHelpRequested: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-uiHelp")
+        #else
+        false
+        #endif
+    }
+
     var body: some View {
         Group {
-            if onboarded {
+            if debugHelpRequested {
+                NavigationStack { HelpView() }
+            } else if onboarded {
                 #if DEBUG
                 ContentView(engine: engine, permissions: permissions, startCreating: startCreating, probeCeiling: probeCeiling)
                 #else

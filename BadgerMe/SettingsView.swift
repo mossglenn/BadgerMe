@@ -82,6 +82,14 @@ struct SettingsView: View {
                 } header: {
                     Text("Focus")
                 }
+
+                Section {
+                    NavigationLink { HelpView() } label: {
+                        Label("How BadgerMe works", systemImage: "questionmark.circle")
+                    }
+                } header: {
+                    Text("Help")
+                }
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
