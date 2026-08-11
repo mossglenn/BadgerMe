@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide — BadgerMe</title>
+<meta name="description" content="How BadgerMe works: what a Badger is, how escalation ladders climb, why silencing an alert isn't the same as being done, and how snooze escalation works.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2052'%3E%3Cg%20fill='%23e5533d'%3E%3Cellipse%20cx='10'%20cy='23'%20rx='4'%20ry='5'/%3E%3Cellipse%20cx='19'%20cy='16'%20rx='4'%20ry='5.5'/%3E%3Cellipse%20cx='29'%20cy='16'%20rx='4'%20ry='5.5'/%3E%3Cellipse%20cx='38'%20cy='23'%20rx='4'%20ry='5'/%3E%3Cpath%20d='M24%2028c8%200%2013%206%2013%2012%200%205-5%208-13%208s-13-3-13-8c0-6%205-12%2013-12z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="spine-rail" aria-hidden="true"><div class="spine"></div></div>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="BadgerMe home">
+      <svg class="paw" viewBox="0 0 48 52" aria-hidden="true">
+        <g fill="currentColor">
+          <ellipse cx="10" cy="23" rx="4" ry="5"/><ellipse cx="19" cy="16" rx="4" ry="5.5"/>
+          <ellipse cx="29" cy="16" rx="4" ry="5.5"/><ellipse cx="38" cy="23" rx="4" ry="5"/>
+          <path d="M24 28c8 0 13 6 13 12 0 5-5 8-13 8s-13-3-13-8c0-6 5-12 13-12z"/>
+        </g>
+      </svg>
+      <span class="wordmark">BadgerMe</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="guide.html" aria-current="page">Guide</a>
+      <a href="support.html">Support</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="doc">
+  <div class="wrap">
+    <div class="doc-head">
+      <p class="eyebrow">Guide</p>
+      <h1>How BadgerMe works.</h1>
+      <p class="lede" style="max-width:54ch">A reminder mentions your task once and gives up. A Badger doesn't. Here's the whole idea in a few minutes.</p>
+    </div>
+
+    <div class="prose">
+      <section>
+        <h2>What a Badger is</h2>
+        <p>A <strong>Badger</strong> is a single-minded little agent you put in charge of <em>one</em> commitment. That's its entire existence. It doesn't manage your day or hold a list — it has one thing to badger you about, and it keeps at it until you either do the thing or tell it you did.</p>
+        <p>You give a Badger a title ("Call the dentist"), pick how hard it should push, and set when it starts. From then on it's on the job.</p>
+        <p class="beat">You don't check on a Badger. A Badger checks on you.</p>
+      </section>
+
+      <section>
+        <h2>The ladder</h2>
+        <p>Each Badger climbs a <strong>ladder</strong> made of <strong>rungs</strong>. A rung is a single step: a delay, and the alert it fires when that time arrives. The ladder always moves in one direction — up — and each rung can be more insistent than the one before it.</p>
+        <ul>
+          <li><strong>Soft rungs</strong> are notifications. Quiet or prominent, but still a notification you can swipe past.</li>
+          <li><strong>Breakthrough rungs</strong> are alarms. They use Apple's alarm system (AlarmKit), which is why they can sound through Silent and an active Focus — the same way a normal iPhone alarm does.</li>
+        </ul>
+        <p>The heat of the ladder — cool, to warm, to hot — is exactly the escalation you feel. You pick the shape when you create the Badger: <strong>Gentle</strong> (long and soft), <strong>Default</strong> (balanced), or <strong>Urgent</strong> (short and loud), and you can build your own.</p>
+      </section>
+
+      <section>
+        <h2>Done is not the same as Dismiss</h2>
+        <p>This is the one rule worth internalising. When an alert goes off, silencing it — tapping <strong>Stop</strong> — quiets <em>that one alert</em>. It does not end the Badger. The ladder keeps climbing on schedule.</p>
+        <p>A Badger is only satisfied when you mark it <strong>Done</strong>. Done resolves the whole thing and cancels everything still queued. You can mark a Badger done straight from the alarm, from a notification, from the Lock Screen, or by asking Siri.</p>
+        <p class="beat">Dismissing a badger is not the same as convincing it.</p>
+      </section>
+
+      <section>
+        <h2>Snooze — and snooze escalation</h2>
+        <p>You can snooze a Badger when now genuinely isn't the moment. It'll go quiet and come back at the time you set, right where it left off.</p>
+        <p>But keep snoozing the <em>same</em> Badger and it takes the hint. After a few snoozes at one level, it climbs a rung on its own — the next time it comes back, it comes back louder. You set how many snoozes it tolerates before it does this.</p>
+        <p class="beat">It notices you're avoiding it.</p>
+      </section>
+
+      <section>
+        <h2>The top rung just repeats</h2>
+        <p>When a Badger reaches the top of its ladder and you still haven't done the thing, it doesn't fall silent and it doesn't declare defeat. The top rung simply repeats, on its own interval, until you resolve it. There is deliberately no "exhausted" state — a Badger that ran out of patience would just be a reminder again.</p>
+      </section>
+
+      <section>
+        <h2>Permissions, and why they matter</h2>
+        <p>BadgerMe asks for two things, and it's honest about why:</p>
+        <ul>
+          <li><strong>Notifications</strong> power the soft rungs — the everyday reminders.</li>
+          <li><strong>Alarms</strong> power the breakthrough rungs. Because these ride on Apple's alarm system, they can reach you through Silent and Focus. Deny this and BadgerMe still runs, but it falls back to notifications only — useful, and much easier to ignore.</li>
+        </ul>
+        <p>You can also use a <strong>Focus filter</strong> to cap how hard BadgerMe is allowed to push during a given Focus — for example, no breakthrough alarms during Sleep. Nothing is collected in exchange for any of this; permissions let the app <em>reach</em> you, not watch you.</p>
+      </section>
+
+      <section>
+        <h2>Getting started</h2>
+        <ul>
+          <li>Create a Badger and give it a plain, specific title.</li>
+          <li>Pick a ladder — start with <strong>Default</strong> if you're not sure.</li>
+          <li>Set when it should start badgering you.</li>
+          <li>Grant notifications and alarms so it can actually do its job.</li>
+        </ul>
+        <p>You can drive all of it hands-free, too: create, snooze, and mark done through Siri, Shortcuts, the widget, and Control Center.</p>
+        <p>Stuck on something specific? The <a href="support.html">Support page</a> has troubleshooting and a way to reach me.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-priv">Nothing leaves your phone. <a href="privacy.html">Here's the proof.</a></div>
+    <div class="foot-meta">
+      <span>BadgerMe — a badgering machine by Amos Glenn</span>
+      <span>© 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

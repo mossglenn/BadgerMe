@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support — BadgerMe</title>
+<meta name="description" content="BadgerMe support: troubleshooting for alarms, permissions, sounds, and data, plus a safe way to get in touch.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2052'%3E%3Cg%20fill='%23e5533d'%3E%3Cellipse%20cx='10'%20cy='23'%20rx='4'%20ry='5'/%3E%3Cellipse%20cx='19'%20cy='16'%20rx='4'%20ry='5.5'/%3E%3Cellipse%20cx='29'%20cy='16'%20rx='4'%20ry='5.5'/%3E%3Cellipse%20cx='38'%20cy='23'%20rx='4'%20ry='5'/%3E%3Cpath%20d='M24%2028c8%200%2013%206%2013%2012%200%205-5%208-13%208s-13-3-13-8c0-6%205-12%2013-12z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="spine-rail" aria-hidden="true"><div class="spine"></div></div>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="BadgerMe home">
+      <svg class="paw" viewBox="0 0 48 52" aria-hidden="true">
+        <g fill="currentColor">
+          <ellipse cx="10" cy="23" rx="4" ry="5"/><ellipse cx="19" cy="16" rx="4" ry="5.5"/>
+          <ellipse cx="29" cy="16" rx="4" ry="5.5"/><ellipse cx="38" cy="23" rx="4" ry="5"/>
+          <path d="M24 28c8 0 13 6 13 12 0 5-5 8-13 8s-13-3-13-8c0-6 5-12 13-12z"/>
+        </g>
+      </svg>
+      <span class="wordmark">BadgerMe</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="guide.html">Guide</a>
+      <a href="support.html" aria-current="page">Support</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="doc">
+  <div class="wrap">
+    <div class="doc-head">
+      <p class="eyebrow">Support</p>
+      <h1>Something not badgering right?</h1>
+      <p class="lede" style="max-width:54ch">Most questions come down to permissions or the difference between silencing an alert and being done. Start here — then write in if you're still stuck.</p>
+    </div>
+
+    <div class="faq">
+      <details>
+        <summary>My alarms aren't sounding.</summary>
+        <p>Breakthrough alerts need alarm permission. Open <strong>Settings ›  BadgerMe</strong> and confirm alarms are allowed, then check two things inside the app: that the Badger is still active (not already marked Done), and that a <strong>Focus filter</strong> isn't capping its prominence for the Focus you're currently in. If alarms were denied, the Badger falls back to notifications only.</p>
+      </details>
+      <details>
+        <summary>I hit Stop and it went quiet — is it done?</summary>
+        <p>No, and this is deliberate. <strong>Stop</strong> silences the one alert that's sounding; it does not resolve the Badger, so the ladder keeps climbing. To actually end it, mark it <strong>Done</strong>. (If you want it gone without resolving, use Stop-the-Badger or Delete — see below.)</p>
+      </details>
+      <details>
+        <summary>It escalated while I was snoozing it.</summary>
+        <p>Also by design. Snoozing the same Badger repeatedly makes it climb a rung on its own after a few tries, so it comes back louder. If you're genuinely done, mark it <strong>Done</strong>; if you want to call the whole thing off, <strong>Stop</strong> the Badger. You can raise its snooze tolerance when you build the ladder.</p>
+      </details>
+      <details>
+        <summary>My imported sound won't play.</summary>
+        <p>Custom sounds have to be <strong>30 seconds or shorter</strong> and in a supported encoding — Linear PCM, IMA4, µ-law, or A-law, packaged as a <code>.caf</code> file. AAC and MP3 aren't accepted. Convert the file and re-import it. A sound that's since been deleted falls back to the default.</p>
+      </details>
+      <details>
+        <summary>Where is my data, and can I back it up?</summary>
+        <p>Everything — your Badgers, their history, and any sounds you import — lives only in BadgerMe's private storage on your device. There's no cloud in this version, so there's nothing to sign into and nothing to sync. Deleting the app removes all of it, and a reinstall starts fresh.</p>
+      </details>
+      <details>
+        <summary>A notification is stuck in Notification Center.</summary>
+        <p>Marking a Badger <strong>Done</strong> clears its pending alerts. A banner that already arrived before you resolved it can simply be swiped away.</p>
+      </details>
+      <details>
+        <summary>Can Siri, Shortcuts, or the widget control it?</summary>
+        <p>Yes. You can create a Badger, mark one done, and snooze through Siri, the Shortcuts app, the Home- and Lock-Screen widgets, and a Control Center control — the app is built to be driven without opening it.</p>
+      </details>
+      <details>
+        <summary>How do I stop a Badger for good?</summary>
+        <p>Three options, depending on what you want: <strong>Done</strong> resolves it (kept in your history as completed), <strong>Stop</strong> ends it without marking it complete (also kept in history), and <strong>Delete</strong> removes it and its history entirely.</p>
+      </details>
+    </div>
+
+    <div class="contact">
+      <p class="eyebrow">Get in touch</p>
+      <h2>Still stuck? Write in.</h2>
+      <p style="max-width:54ch;color:var(--ink-dim)">There's no ticket system and no bot. Tap below to reveal the address and open your mail app. Tell me what you were doing, what happened, and your iOS version if you can — it helps.</p>
+      <button class="btn" data-reveal-email data-target="#contact-out">Show contact email</button>
+      <p class="contact-out" id="contact-out" aria-live="polite"></p>
+      <p class="beat">A badger will get back to you. The badger is me.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-priv">Nothing leaves your phone. <a href="privacy.html">Here's the proof.</a></div>
+    <div class="foot-meta">
+      <span>BadgerMe — a badgering machine by Amos Glenn</span>
+      <span>© 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
