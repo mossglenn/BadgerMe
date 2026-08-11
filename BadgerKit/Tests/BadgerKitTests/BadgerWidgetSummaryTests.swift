@@ -62,7 +62,7 @@ struct BadgerWidgetSummaryTests {
 
     private func input(_ id: UUID, terminal: Bool, fire: Date?) -> WidgetBadgerInput {
         WidgetBadgerInput(id: id, title: id.uuidString, tint: "accent",
-                          iconName: nil, isTerminal: terminal, nextFire: fire)
+                          iconName: nil, isTerminal: terminal, nextFire: fire, tone: .identity)
     }
 
     @Test("count is non-terminal only; most-urgent is the soonest fire")

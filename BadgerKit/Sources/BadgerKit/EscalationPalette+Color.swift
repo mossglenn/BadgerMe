@@ -13,6 +13,9 @@ import SwiftUI
 
 public extension EscalationPalette {
     /// Resolve an identity-tint token (see `identityTints`) to a Color; unknown / `accent` → accent.
+    /// DEPRECATED (P2 design pass): per-Badger identity is the icon SHAPE now, not a tint colour, so
+    /// this resolver + `identityTints` are vestigial — removed once the widget/console stop tinting
+    /// by identity (they tint by escalation heat via `EscalationTone.color`).
     static func tintColor(_ token: String?) -> Color {
         switch token {
         case "red":          return .red
@@ -34,14 +37,17 @@ public extension EscalationPalette {
 }
 
 public extension EscalationTone {
-    /// The concrete colour for this tone; `.identity` resolves the Badger's own tint token.
-    func color(tint: String?) -> Color {
+    /// The concrete colour for this tone. Colour is a PURE escalation-heat signal (P2 design pass):
+    /// per-Badger identity lives in the icon SHAPE, not colour, so `tint` is ignored here (kept with a
+    /// default for source compatibility; dropped when the widget surface moves the icon onto heat).
+    /// Resolves to `DesignTokens`, not raw system colours.
+    func color(tint: String? = nil) -> Color {
         switch self {
-        case .identity: return EscalationPalette.tintColor(tint)
-        case .warm:     return .orange
-        case .hot:      return .red
-        case .muted:    return .gray
-        case .overdue:  return .orange
+        case .identity: return DesignTokens.escCalm
+        case .warm:     return DesignTokens.escWarn
+        case .hot:      return DesignTokens.escDanger
+        case .muted:    return DesignTokens.escMuted
+        case .overdue:  return DesignTokens.escOverdue
         }
     }
 }

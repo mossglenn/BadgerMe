@@ -66,16 +66,16 @@ struct LadderPreview: View {
     let maxSnooze: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             ForEach(rungs.sorted { $0.index < $1.index }, id: \.index) { rung in
                 let action = rung.actions.first
-                HStack(spacing: 8) {
+                HStack(spacing: Space.xs) {
                     Text(ConsoleFormat.delay(rung.delay))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
-                        .frame(minWidth: 44, alignment: .leading)
+                        .frame(minWidth: Space.xxl, alignment: .leading)
                     Image(systemName: ConsoleFormat.prominenceSymbol(action?.prominence))
-                        .foregroundStyle(action?.prominence == .breakthrough ? Color.red : .secondary)
+                        .foregroundStyle(action?.prominence == .breakthrough ? DesignTokens.escDanger : .secondary)
                         .imageScale(.small)
                     Text(ConsoleFormat.prominence(action?.prominence)).font(.caption)
                 }

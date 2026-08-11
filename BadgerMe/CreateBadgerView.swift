@@ -20,9 +20,18 @@ struct CreateBadgerView: View {
     @State private var startNow = true
     @State private var startDate = Date()
     @State private var ladderID = BadgerConfig.defaultLadderID
+    @State private var confirmingDiscard = false
 
     private var selected: LadderTemplate? { templates.first { $0.id == ladderID } ?? templates.first }
     private var trimmedTitle: String { title.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// Any user input worth guarding against an accidental dismiss (S3).
+    private var isDirty: Bool {
+        !trimmedTitle.isEmpty
+        || !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        || !startNow
+        || ladderID != BadgerConfig.defaultLadderID
+    }
 
     var body: some View {
         NavigationStack {
@@ -49,7 +58,9 @@ struct CreateBadgerView: View {
             .navigationTitle("New Badger")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { if isDirty { confirmingDiscard = true } else { dismiss() } }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create", action: create).disabled(trimmedTitle.isEmpty || selected == nil)
                 }
@@ -58,6 +69,11 @@ struct CreateBadgerView: View {
                 if !templates.contains(where: { $0.id == ladderID }) {
                     ladderID = templates.first?.id ?? ladderID
                 }
+            }
+            .interactiveDismissDisabled(isDirty)
+            .confirmationDialog("Discard this Badger?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                Button("Discard", role: .destructive) { dismiss() }
+                Button("Keep editing", role: .cancel) { }
             }
         }
     }

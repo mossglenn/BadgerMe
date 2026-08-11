@@ -63,6 +63,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions:
                         [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        #if DEBUG
+        let uiArgs = ProcessInfo.processInfo.arguments
+        if uiArgs.contains("-uiSeed") || uiArgs.contains("-uiEmpty") {
+            BadgerConfig.hasCompletedOnboarding = true   // land on the console (P4 screenshots / empty-state)
+        }
+        #endif
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.setNotificationCategories([BadgerNotifications.category()])
@@ -76,6 +82,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             await engine.sweepStrayAlerts()   // cancel crash-window orphans no live Badger owns (M6 CP2)
             await refreshFocusFilter()        // apply the active Focus's escalation cap on launch (M6 CP4)
             engine.startObserving()   // consume AlarmKit's live lifecycle stream (§14 path 1)
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-uiSeed") { await Self.seedSampleBadgers(engine) }
+            #endif
         }
         return true
     }
@@ -88,6 +97,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let current = try? await SetBadgerFocusFilterIntent.current
         await engine.applyFocusFilter(cap: current?.cap?.prominenceCap, onlyTag: current?.onlyTag)
     }
+
+    #if DEBUG
+    /// P4 design-review seed (gated by the -uiSeed launch arg): a spread of Badgers across the
+    /// escalation heat range so a single screenshot shows calm → warm → hot → muted.
+    static func seedSampleBadgers(_ engine: BadgerEngine) async {
+        let now = Date()
+        let ladder = ContentView.devNotificationLadder      // rungs @ +10 / +25 / +45s
+        await engine.create(title: "Call the dentist", startAt: now,
+                            rungs: ladder, maxSnoozeCount: 1)                        // pending → calm
+        await engine.create(title: "Send the invoice", startAt: now.addingTimeInterval(-30),
+                            rungs: ladder, maxSnoozeCount: 1)                        // level 1 → warm
+        await engine.create(title: "Take the meds", startAt: now.addingTimeInterval(-100),
+                            rungs: ladder, maxSnoozeCount: 1)                        // last rung → hot
+        let snoozed = await engine.create(title: "Water the plants", startAt: now,
+                                          rungs: ladder, maxSnoozeCount: 1)
+        await engine.snooze(snoozed, duration: 3600)                                // → muted
+        await engine.reconcileAll()
+    }
+    #endif
 
     // A soft rung fired while the app is foreground: advance that Badger now + show it.
     func userNotificationCenter(_ center: UNUserNotificationCenter,

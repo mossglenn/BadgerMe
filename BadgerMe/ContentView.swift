@@ -12,16 +12,16 @@ import BadgerKit
 struct ContentView: View {
     let engine: BadgerEngine
     let permissions: Permissions
+    /// Set once by RootView after onboarding's "Create your first Badger" — auto-opens create.
+    var startCreating: Bool = false
     /// DEBUG diagnostic (SP9/B1): probe the per-app AlarmKit alarm ceiling. nil in release.
     var probeCeiling: (@Sendable () async -> Int)? = nil
 
     @Query(sort: \Badger.createdAt, order: .reverse) private var badgers: [Badger]
     @State private var showCreate = false
     @State private var showSettings = false
-    #if DEBUG
-    @Query(sort: \EventRecord.timestamp, order: .reverse) private var events: [EventRecord]
-    @State private var ceilingResult: String?
-    #endif
+    @Namespace private var heroNS
+    @State private var didAutoCreate = false
 
     private var escalatingCount: Int { badgers.filter { !$0.isTerminal }.count }
     private var atCap: Bool { escalatingCount >= BadgerConfig.maxConcurrentEscalating }
@@ -30,28 +30,52 @@ struct ContentView: View {
         NavigationStack {
             List {
                 if badgers.isEmpty {
-                    ContentUnavailableView("No Badgers", systemImage: "bell.slash",
-                        description: Text("Tap + to start badgering yourself about something."))
+                    VStack(spacing: Space.md) {
+                        Image("badgerpaw")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        Text("Nothing's badgering you")
+                            .font(.title2.bold())
+                            .multilineTextAlignment(.center)
+                        Text("Add a Badger and it'll keep after you about something you'd otherwise let slide.")
+                            .font(.badgerVoice(.callout))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button { Haptics.impact(.light); showCreate = true } label: {
+                            Label("New Badger", systemImage: "plus")
+                                .font(.headline)
+                                .foregroundStyle(DesignTokens.onAccent)
+                                .padding(.horizontal, Space.sm)
+                                .padding(.vertical, Space.xxs)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(DesignTokens.accent)
+                        .padding(.top, Space.xs)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Space.xl)
                 } else {
                     Section {
                         ForEach(badgers) { badger in
                             NavigationLink {
-                                BadgerDetailView(badger: badger, engine: engine)
+                                BadgerDetailView(badger: badger, engine: engine, heroNamespace: heroNS)
                             } label: {
                                 BadgerRow(badger: badger)
                             }
+                            .matchedTransitionSource(id: badger.id, in: heroNS)
                             .swipeActions(edge: .trailing, allowsFullSwipe: !badger.isTerminal) {
                                 if !badger.isTerminal {
                                     Button { Haptics.success(); Task { await engine.markDone(badger.id) } } label: {
                                         Label("Done", systemImage: "checkmark.circle.fill")
-                                    }.tint(.green)
+                                    }.tint(DesignTokens.positive)
                                 }
                             }
                             .swipeActions(edge: .leading) {
                                 if !badger.isTerminal && badger.state != .snoozed {
                                     Button { Haptics.impact(.light); Task { await engine.snooze(badger.id, duration: BadgerConfig.defaultSnoozeDuration) } } label: {
                                         Label("Snooze", systemImage: "moon.zzz.fill")
-                                    }.tint(.indigo)
+                                    }.tint(DesignTokens.accent)
                                 }
                             }
                         }
@@ -59,50 +83,67 @@ struct ContentView: View {
                         if atCap { capFooter }
                     }
                 }
-                #if DEBUG
-                debugHarness
-                eventLogSection
-                #endif
             }
-            .navigationTitle("BadgerMe")
+            .navigationTitle("Badgers")
+            .safeAreaInset(edge: .bottom) {
+                if !badgers.isEmpty { newBadgerButton }
+            }
+            .refreshable { await engine.reconcileAll() }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel("Settings")
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    Button { showCreate = true } label: { Image(systemName: "plus") }
-                        .disabled(atCap)
-                        .accessibilityLabel("New Badger")
-                }
             }
             .sheet(isPresented: $showCreate) { CreateBadgerView(engine: engine) }
-            .sheet(isPresented: $showSettings) { SettingsView(engine: engine, permissions: permissions) }
+            .sheet(isPresented: $showSettings) { SettingsView(engine: engine, permissions: permissions, probeCeiling: probeCeiling) }
         }
         .task { await engine.reconcileAll() }
+        .onAppear { if startCreating && !didAutoCreate { didAutoCreate = true; showCreate = true } }
     }
 
     private var capFooter: some View {
         Label("Paws are full — resolve one to add another (\(BadgerConfig.maxConcurrentEscalating) max).",
-              systemImage: "pawprint.fill")
+              image: "badgerpaw.fill")
             .font(.footnote)
+    }
+
+    private var newBadgerButton: some View {
+        Button {
+            Haptics.impact(.light)
+            showCreate = true
+        } label: {
+            Label("New Badger", systemImage: "plus")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Space.xs)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(DesignTokens.accent)
+        .disabled(atCap)
+        .padding(.horizontal, Space.screenMargin)
+        .padding(.bottom, Space.xs)
+        .accessibilityLabel("New Badger")
     }
 }
 
 private struct BadgerRow: View {
     let badger: Badger
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "circle.fill")
-                .imageScale(.small)
+        HStack(spacing: Space.sm) {
+            badger.identityImage
+                .imageScale(.medium)
                 .foregroundStyle(badger.escalationColor)
+                .frame(width: Space.xl)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(badger.title).font(.headline)
-                Text(badger.statusText).font(.caption).foregroundStyle(.secondary)
+                Text(badger.statusText).font(.subheadline).foregroundStyle(.secondary)
             }
         }
+        .animation(reduceMotion ? nil : Motion.standard, value: badger.escalationTone)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(badger.title), \(badger.statusText)")
     }
@@ -110,66 +151,6 @@ private struct BadgerRow: View {
 
 #if DEBUG
 extension ContentView {
-    var debugHarness: some View {
-        Section("Dev harness (device-verify)") {
-            Button("New Badger — 10/25/45s notification ladder") {
-                Task { await engine.create(title: "Test Badger", startAt: .now,
-                                            rungs: Self.devNotificationLadder, maxSnoozeCount: 1) }
-            }
-            Button("New Badger — 10/25/45s breakthrough ladder") {
-                Task { await engine.create(title: "AlarmKit Test Badger", startAt: .now,
-                                            rungs: Self.devBreakthroughLadder, maxSnoozeCount: 1) }
-            }
-            Button("Reconcile all (catch up)") { Task { await engine.reconcileAll() } }
-
-            Button("Probe alarm ceiling (B1 / SP9)") {
-                Task {
-                    ceilingResult = "probing…"
-                    if let probe = probeCeiling {
-                        ceilingResult = "ceiling ≈ \(await probe()) alarms"
-                    } else {
-                        ceilingResult = "unavailable (no AlarmKit)"
-                    }
-                }
-            }
-            if let ceilingResult {
-                Text(ceilingResult).font(.caption.monospaced()).foregroundStyle(.secondary)
-            }
-            Button("Probe Live Activity ceiling (D1 / D3)") {
-                Task {
-                    ceilingResult = "probing LA…"
-                    ceilingResult = await LAProbe.measureCeiling()
-                }
-            }
-            Button("Near-future probe — alarms @ 5 / 15 / 30s (B2 / SP13)") {
-                Task {
-                    for t: TimeInterval in [5, 15, 30] {
-                        await engine.create(
-                            title: "NF \(Int(t))s", startAt: .now,
-                            rungs: [RungSpec(index: 0, delay: t,
-                                             actions: [ChannelAction(channelID: "alarmkit",
-                                                                     prominence: .breakthrough)])],
-                            maxSnoozeCount: 1)
-                    }
-                }
-            }
-        }
-    }
-
-    var eventLogSection: some View {
-        Section("Event log (newest first)") {
-            if events.isEmpty {
-                Text("No events yet.").foregroundStyle(.secondary)
-            } else {
-                ForEach(events.prefix(25)) { event in
-                    Text(event.timestamp.formatted(date: .omitted, time: .standard)
-                         + "  " + event.kindRaw + (event.level.map { " L\($0)" } ?? ""))
-                        .font(.caption2.monospaced())
-                }
-            }
-        }
-    }
-
     static var devNotificationLadder: [RungSpec] {
         [
             RungSpec(index: 0, delay: 10, actions: [ChannelAction(channelID: "notification", prominence: .active)]),

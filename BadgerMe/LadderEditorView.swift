@@ -25,6 +25,8 @@ struct LadderEditorView: View {
     @State private var name: String
     @State private var rungs: [EditRung]
     @State private var maxSnooze: Int
+    @State private var confirmingDiscard = false
+    private let initialSignature: String
 
     init(engine: BadgerEngine, templateID: UUID?, name: String,
          rungs: [EditRung], maxSnooze: Int, isBuiltIn: Bool) {
@@ -34,13 +36,50 @@ struct LadderEditorView: View {
         _name = State(initialValue: name)
         _rungs = State(initialValue: rungs)
         _maxSnooze = State(initialValue: maxSnooze)
+        initialSignature = Self.signature(name: name, rungs: rungs, maxSnooze: maxSnooze)
     }
 
     private var canSave: Bool {
         !isBuiltIn && !name.trimmingCharacters(in: .whitespaces).isEmpty && !rungs.isEmpty
     }
 
+    /// Unsaved-changes guard (S3): a signature of the editable fields vs the initial one.
+    private var isDirty: Bool {
+        !isBuiltIn && Self.signature(name: name, rungs: rungs, maxSnooze: maxSnooze) != initialSignature
+    }
+
+    private static func signature(name: String, rungs: [EditRung], maxSnooze: Int) -> String {
+        name + "|\(maxSnooze)|" + rungs.map { "\($0.delayMinutes)-\($0.prominence)-\(String(describing: $0.soundRef))" }.joined(separator: ",")
+    }
+
     var body: some View {
+        NavigationStack {
+            editorForm
+                .navigationTitle(templateID == nil ? "New Ladder" : name)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { if isDirty { confirmingDiscard = true } else { dismiss() } }
+                    }
+                    if isBuiltIn {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Duplicate") { duplicate() }
+                        }
+                    } else {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Save") { save() }.disabled(!canSave)
+                        }
+                    }
+                }
+                .confirmationDialog("Discard changes to this ladder?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                    Button("Discard", role: .destructive) { dismiss() }
+                    Button("Keep editing", role: .cancel) { }
+                }
+        }
+        .interactiveDismissDisabled(isDirty)
+    }
+
+    @ViewBuilder private var editorForm: some View {
         Form {
             if isBuiltIn {
                 Section {
@@ -78,7 +117,15 @@ struct LadderEditorView: View {
                         } label: { Text("Remove rung") }
                     }
                 } header: {
-                    Text("Rung \(number(of: rung))")
+                    HStack {
+                        Text("Rung \(number(of: rung))")
+                        Spacer()
+                        Label(ConsoleFormat.prominence(rung.prominence),
+                              systemImage: ConsoleFormat.prominenceSymbol(rung.prominence))
+                            .font(.caption)
+                            .foregroundStyle(rung.prominence == .breakthrough
+                                             ? DesignTokens.escDanger : Color.secondary)
+                    }
                 }
                 .disabled(isBuiltIn)
             }
@@ -92,19 +139,6 @@ struct LadderEditorView: View {
             Section("Snooze budget") {
                 Stepper("Snoozes before escalating: \(maxSnooze)", value: $maxSnooze, in: 0...10)
                     .disabled(isBuiltIn)
-            }
-        }
-        .navigationTitle(templateID == nil ? "New Ladder" : name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if isBuiltIn {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Duplicate") { duplicate() }
-                }
-            } else {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(!canSave)
-                }
             }
         }
     }

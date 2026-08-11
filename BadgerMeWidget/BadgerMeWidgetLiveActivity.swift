@@ -23,14 +23,14 @@ struct BadgerMeWidgetLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: ambientIcon(context))
+                    ambientIcon(context)
                         .foregroundStyle(escalationTint(context))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     AmbientCountdown(context: context).font(.title3.monospacedDigit())
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    VStack(spacing: 2) {
+                    VStack(spacing: Space.xxs) {
                         Text(context.attributes.title).font(.headline).lineLimit(1)
                         Text(ambientStatusLine(context)).font(.caption2)
                             .foregroundStyle(.secondary).lineLimit(1)
@@ -44,12 +44,12 @@ struct BadgerMeWidgetLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: ambientIcon(context))
+                ambientIcon(context)
                     .foregroundStyle(escalationTint(context))
             } compactTrailing: {
                 AmbientCountdown(context: context).monospacedDigit()
             } minimal: {
-                Image(systemName: ambientIcon(context))
+                ambientIcon(context)
                     .foregroundStyle(escalationTint(context))
             }
         }
@@ -59,16 +59,16 @@ struct BadgerMeWidgetLiveActivity: Widget {
 private struct AmbientLockScreenView: View {
     let context: ActivityViewContext<BadgerActivityAttributes>
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                Image(systemName: ambientIcon(context))
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.sm) {
+                ambientIcon(context)
                     .font(.title2)
                     .foregroundStyle(escalationTint(context))
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(context.attributes.title).font(.headline).lineLimit(1)
                     Text(ambientStatusLine(context)).font(.subheadline).foregroundStyle(.secondary)
                 }
-                Spacer(minLength: 8)
+                Spacer(minLength: Space.xs)
                 AmbientCountdown(context: context).font(.title2.monospacedDigit())
             }
             if showsActions(context) {
@@ -82,15 +82,15 @@ private struct AmbientLockScreenView: View {
 private struct AmbientActionButtons: View {
     let context: ActivityViewContext<BadgerActivityAttributes>
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.xs) {
             Button(intent: MarkBadgerDoneIntent(badgerID: context.attributes.badgerID)) {
                 Label("Done", systemImage: "checkmark")
             }
-            .tint(.green)
+            .tint(DesignTokens.positive)
             Button(intent: SnoozeBadgerIntent(badgerID: context.attributes.badgerID, minutes: BadgerConfig.defaultSnoozeMinutes)) {
                 Label("Snooze", systemImage: "moon.zzz")
             }
-            .tint(.orange)
+            .tint(DesignTokens.accent)
         }
         .buttonStyle(.bordered)
         .font(.caption)
@@ -103,7 +103,7 @@ private struct AmbientCountdown: View {
     var body: some View {
         switch context.state.phase {
         case .done:
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(DesignTokens.positive)
         case .stopped:
             Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
         default:
@@ -125,13 +125,14 @@ private func showsActions(_ context: ActivityViewContext<BadgerActivityAttribute
     AmbientPresentation.showsActions(context.state.phase)
 }
 
-private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes>) -> String {
-    if context.isStale, isEscalating(context.state.phase) { return "exclamationmark.triangle.fill" }
+private func ambientIcon(_ context: ActivityViewContext<BadgerActivityAttributes>) -> Image {
+    if context.isStale, isEscalating(context.state.phase) { return Image(systemName: "exclamationmark.triangle.fill") }
     switch context.state.phase {
-    case .done:    return "checkmark.circle.fill"
-    case .stopped: return "xmark.circle.fill"
-    case .snoozed: return "moon.zzz.fill"
-    default:       return context.attributes.iconName ?? "bell.badge.fill"   // the Badger SF Symbol
+    case .done:    return Image(systemName: "checkmark.circle.fill")
+    case .stopped: return Image(systemName: "xmark.circle.fill")
+    case .snoozed: return Image(systemName: "moon.zzz.fill")
+    default:       if let name = context.attributes.iconName { return Image(systemName: name) }
+        return Image("badgerpaw.fill")   // the Badger SF Symbol
     }
 }
 

@@ -12,9 +12,10 @@
 
 import Foundation
 
-/// The semantic "heat" of a Badger's escalation. A tone is a decision, not a colour — each
-/// surface resolves `.identity` against the Badger's own tint token and picks concrete colours
-/// for the rest (warm ≈ orange, hot ≈ red, muted ≈ grey, overdue ≈ orange).
+/// The semantic "heat" of a Badger's escalation. A tone is a decision, not a colour. Colour is a
+/// PURE escalation-heat signal (P2 design pass): `.identity`/armed → the fixed calm sage floor,
+/// `.warm` → amber, `.hot` → red, `.overdue` → orange, `.muted` → neutral. Per-Badger identity
+/// now lives in the icon SHAPE, not colour (see `DesignTokens`, Design Brief A2).
 public enum EscalationTone: Equatable, Sendable {
     case identity   // the Badger's own tint token — armed, and the cool half of the ramp
     case warm       // warming through the upper ladder
@@ -43,6 +44,25 @@ public enum EscalationPalette {
     static func heat(level: Int, total: Int) -> EscalationTone {
         guard total > 1 else { return .identity }
         return Double(level) / Double(total - 1) < 0.5 ? .identity : .warm
+    }
+
+    /// Derive the ambient phase from a persisted Badger's state (the console + the widget reader
+    /// share this). `active` at the last rung is the repeating tail.
+    public static func phase(state: StoredBadgerState, currentLevel: Int, totalLevels: Int) -> BadgerActivityPhase {
+        switch state {
+        case .pending: return .armed
+        case .active:  return currentLevel >= max(0, totalLevels - 1) ? .repeating : .escalating
+        case .snoozed: return .snoozed
+        case .done:    return .done
+        case .stopped: return .stopped
+        }
+    }
+
+    /// Tone straight from a persisted Badger's fields (glance / widget-reader convenience).
+    public static func tone(state: StoredBadgerState, currentLevel: Int, totalLevels: Int,
+                            isStale: Bool = false) -> EscalationTone {
+        tone(phase: phase(state: state, currentLevel: currentLevel, totalLevels: totalLevels),
+             level: currentLevel, totalLevels: totalLevels, isStale: isStale)
     }
 
     /// Canonical identity tint vocabulary (§16): the tokens the create/edit picker offers and

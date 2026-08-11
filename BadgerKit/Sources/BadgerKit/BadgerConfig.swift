@@ -66,7 +66,7 @@ public enum BadgerConfig {
     private static let snoozeOptionsKey = "snoozeOptionsMinutes"
 
     /// The quick-snooze menu (minutes) until Settings writes one (§16/D6).
-    public static let fallbackSnoozeOptions = [5, 9, 15, 30, 60]
+    public static let fallbackSnoozeOptions = [5, 9, 60]
 
     /// Positive, de-duplicated, sorted; empty falls back to `fallbackSnoozeOptions`. Shared by the
     /// getter (sanitising stored values) and setter (sanitising before store) so both agree.

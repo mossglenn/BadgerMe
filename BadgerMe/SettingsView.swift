@@ -14,6 +14,7 @@ import BadgerKit
 struct SettingsView: View {
     let engine: BadgerEngine
     let permissions: Permissions
+    var probeCeiling: (@Sendable () async -> Int)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -82,6 +83,24 @@ struct SettingsView: View {
                 } header: {
                     Text("Focus")
                 }
+
+                Section {
+                    NavigationLink { HelpView() } label: {
+                        Label("How BadgerMe works", systemImage: "questionmark.circle")
+                    }
+                } header: {
+                    Text("Help")
+                }
+
+                #if DEBUG
+                Section {
+                    NavigationLink { DeveloperView(engine: engine, probeCeiling: probeCeiling) } label: {
+                        Label("Developer", systemImage: "hammer")
+                    }
+                } header: {
+                    Text("Developer")
+                }
+                #endif
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -106,8 +125,9 @@ struct SettingsView: View {
             Spacer()
             Label(status, systemImage: ok ? "checkmark.circle.fill" : "exclamationmark.circle")
                 .labelStyle(.titleAndIcon)
-                .foregroundStyle(ok ? Color.green : .secondary)
+                .foregroundStyle(ok ? DesignTokens.positive : DesignTokens.escWarn)
         }
+        .accessibilityElement(children: .combine)
     }
 
     private func addOption() {

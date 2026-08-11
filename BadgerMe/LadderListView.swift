@@ -12,18 +12,21 @@ import BadgerKit
 struct LadderListView: View {
     let engine: BadgerEngine
     @Query(sort: \LadderTemplate.name) private var templates: [LadderTemplate]
+    @State private var editorConfig: EditorConfig?
 
     var body: some View {
         List {
             Section {
                 ForEach(templates) { t in
-                    NavigationLink {
-                        LadderEditorView(engine: engine, templateID: t.id, name: t.name,
-                                         rungs: Self.editRungs(from: t),
-                                         maxSnooze: t.defaultMaxSnoozeCount, isBuiltIn: t.isBuiltIn)
+                    Button {
+                        editorConfig = EditorConfig(templateID: t.id, name: t.name,
+                                                    rungs: Self.editRungs(from: t),
+                                                    maxSnooze: t.defaultMaxSnoozeCount,
+                                                    isBuiltIn: t.isBuiltIn)
                     } label: {
                         LadderRow(template: t)
                     }
+                    .buttonStyle(.plain)
                 }
                 .onDelete(perform: deleteUserTemplates)
             } footer: {
@@ -31,13 +34,17 @@ struct LadderListView: View {
             }
         }
         .navigationTitle("Ladders")
+        .sheet(item: $editorConfig) { cfg in
+            LadderEditorView(engine: engine, templateID: cfg.templateID, name: cfg.name,
+                             rungs: cfg.rungs, maxSnooze: cfg.maxSnooze, isBuiltIn: cfg.isBuiltIn)
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    LadderEditorView(engine: engine, templateID: nil, name: "",
-                                     rungs: [EditRung(delayMinutes: 0, prominence: .active,
-                                                      soundRef: SoundCatalog.ahem.soundRef)],
-                                     maxSnooze: 1, isBuiltIn: false)
+                Button {
+                    editorConfig = EditorConfig(templateID: nil, name: "",
+                                                rungs: [EditRung(delayMinutes: 0, prominence: .active,
+                                                                 soundRef: SoundCatalog.ahem.soundRef)],
+                                                maxSnooze: 1, isBuiltIn: false)
                 } label: { Image(systemName: "plus") }
                     .accessibilityLabel("New ladder")
             }
@@ -59,6 +66,15 @@ struct LadderListView: View {
                             soundRef: action?.soundRef)
         }
     }
+}
+
+private struct EditorConfig: Identifiable {
+    let id = UUID()
+    let templateID: UUID?
+    let name: String
+    let rungs: [EditRung]
+    let maxSnooze: Int
+    let isBuiltIn: Bool
 }
 
 private struct LadderRow: View {

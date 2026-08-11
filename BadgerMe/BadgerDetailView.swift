@@ -17,10 +17,13 @@ struct BadgerDetailView: View {
     @Query private var events: [EventRecord]
     @State private var confirmingStop = false
     @State private var confirmingDelete = false
+    var heroNamespace: Namespace.ID? = nil
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(badger: Badger, engine: BadgerEngine) {
+    init(badger: Badger, engine: BadgerEngine, heroNamespace: Namespace.ID? = nil) {
         self.badger = badger
         self.engine = engine
+        self.heroNamespace = heroNamespace
         let id = badger.id
         _events = Query(filter: #Predicate<EventRecord> { $0.badgerID == id },
                         sort: \.sequence, order: .reverse)
@@ -32,7 +35,11 @@ struct BadgerDetailView: View {
         // SwiftData faults ("backing data detached… without resolving attribute faults"). Rendering
         // nothing here supersedes per-property guards for this view.
         if badger.isLive {
-            content
+            if let ns = heroNamespace {
+                content.navigationTransition(.zoom(sourceID: badger.id, in: ns))
+            } else {
+                content
+            }
         } else {
             Color.clear
         }
@@ -80,14 +87,13 @@ struct BadgerDetailView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: badger.iconName ?? "bell.badge.fill")
+        HStack(alignment: .top, spacing: Space.sm) {
+            badger.identityImage
                 .font(.title2)
                 .foregroundStyle(badger.escalationColor)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Label(badger.statusText, systemImage: "circle.fill")
-                    .labelStyle(.titleOnly)
+            VStack(alignment: .leading, spacing: Space.xxs) {
+                Text(badger.statusText)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(badger.escalationColor)
                 if let notes = badger.notes, !notes.isEmpty {
@@ -95,7 +101,8 @@ struct BadgerDetailView: View {
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, Space.xxs)
+        .animation(reduceMotion ? nil : Motion.standard, value: badger.escalationTone)
     }
 
     @ViewBuilder private var actions: some View {
@@ -133,7 +140,7 @@ private struct TimelineRow: View {
     let event: EventRecord
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Space.sm) {
             Text(event.timestamp.formatted(date: .abbreviated, time: .shortened))
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)

@@ -16,13 +16,7 @@ enum EscalationStyle {
     /// Derive the ambient phase from a persisted Badger's state (the console has no live LA phase).
     /// `active` at the last rung is the repeating tail. `isStale` is false in the console (live view).
     static func phase(state: StoredBadgerState, currentLevel: Int, totalLevels: Int) -> BadgerActivityPhase {
-        switch state {
-        case .pending: return .armed
-        case .active:  return currentLevel >= max(0, totalLevels - 1) ? .repeating : .escalating
-        case .snoozed: return .snoozed
-        case .done:    return .done
-        case .stopped: return .stopped
-        }
+        EscalationPalette.phase(state: state, currentLevel: currentLevel, totalLevels: totalLevels)
     }
 }
 
@@ -48,6 +42,13 @@ extension Badger {
 
     /// The colour for this Badger's status indicator (paired with text/symbol in the UI).
     var escalationColor: Color { escalationTone.color(tint: tint) }
+
+    /// The identity glyph (SHAPE = which Badger; colour = heat, applied separately). Falls back
+    /// to a paw until the per-Badger icon picker ships (deferred, P2).
+    var identityImage: Image {
+        if let iconName { return Image(systemName: iconName) }
+        return Image("badgerpaw.fill")
+    }
 
     var isTerminal: Bool { state == .done || state == .stopped }
 

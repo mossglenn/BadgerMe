@@ -30,9 +30,11 @@ public struct BadgerWidgetSummary: Sendable, Equatable {
         public let tint: String
         public let iconName: String?
         public let nextFire: Date
-        public init(id: UUID, title: String, tint: String, iconName: String?, nextFire: Date) {
+        public let tone: EscalationTone
+        public init(id: UUID, title: String, tint: String, iconName: String?, nextFire: Date,
+                    tone: EscalationTone) {
             self.id = id; self.title = title; self.tint = tint
-            self.iconName = iconName; self.nextFire = nextFire
+            self.iconName = iconName; self.nextFire = nextFire; self.tone = tone
         }
     }
 
@@ -70,6 +72,7 @@ struct WidgetBadgerInput: Equatable {
     let iconName: String?
     let isTerminal: Bool
     let nextFire: Date?
+    let tone: EscalationTone
 }
 
 /// Active count (non-terminal) + the non-terminal Badger firing soonest. Pure.
@@ -79,7 +82,7 @@ func summarizeWidget(_ inputs: [WidgetBadgerInput]) -> BadgerWidgetSummary {
         .compactMap { i in i.nextFire.map { (i, $0) } }
         .min { $0.1 < $1.1 }
         .map { BadgerWidgetSummary.Item(id: $0.0.id, title: $0.0.title, tint: $0.0.tint,
-                                        iconName: $0.0.iconName, nextFire: $0.1) }
+                                        iconName: $0.0.iconName, nextFire: $0.1, tone: $0.0.tone) }
     return BadgerWidgetSummary(activeCount: live.count, mostUrgent: urgent)
 }
 
@@ -103,7 +106,8 @@ public enum BadgerWidgetReader {
                                       rungs: rungs, now: now)
             return WidgetBadgerInput(id: b.id, title: b.title, tint: b.tint, iconName: b.iconName,
                                      isTerminal: b.state == .done || b.state == .stopped,
-                                     nextFire: next)
+                                     nextFire: next,
+                                     tone: EscalationPalette.tone(state: b.state, currentLevel: b.currentLevel, totalLevels: rungs.count))
         }
         return summarizeWidget(inputs)
     }

@@ -35,22 +35,35 @@ struct RootView: View {
 
     @State private var permissions = Permissions()
     @State private var onboarded = BadgerConfig.hasCompletedOnboarding
+    @State private var startCreating = false
+
+    private var debugHelpRequested: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-uiHelp")
+        #else
+        false
+        #endif
+    }
 
     var body: some View {
         Group {
-            if onboarded {
+            if debugHelpRequested {
+                NavigationStack { HelpView() }
+            } else if onboarded {
                 #if DEBUG
-                ContentView(engine: engine, permissions: permissions, probeCeiling: probeCeiling)
+                ContentView(engine: engine, permissions: permissions, startCreating: startCreating, probeCeiling: probeCeiling)
                 #else
-                ContentView(engine: engine, permissions: permissions)
+                ContentView(engine: engine, permissions: permissions, startCreating: startCreating)
                 #endif
             } else {
-                OnboardingView(permissions: permissions) {
+                OnboardingView(permissions: permissions) { startCreating in
                     BadgerConfig.hasCompletedOnboarding = true
+                    self.startCreating = startCreating
                     onboarded = true
                 }
             }
         }
         .task { await permissions.refresh() }
+        .tint(DesignTokens.accent)
     }
 }

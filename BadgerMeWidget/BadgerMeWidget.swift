@@ -49,8 +49,8 @@ struct BadgerWidgetView: View {
     }
 
     private var empty: some View {
-        VStack(spacing: 6) {
-            Image(systemName: "checkmark.circle.fill").font(.title).foregroundStyle(.green)
+        VStack(spacing: Space.xs) {
+            Image(systemName: "checkmark.circle.fill").font(.title).foregroundStyle(DesignTokens.positive)
             Text("All clear").font(.headline)
             Text("Nothing badgering you").font(.caption).foregroundStyle(.secondary)
         }
@@ -58,14 +58,19 @@ struct BadgerWidgetView: View {
     }
 
     private func active(_ urgent: BadgerWidgetSummary.Item, count: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: urgent.iconName ?? "bell.badge.fill")
-                    .foregroundStyle(tintColor(urgent.tint))
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
+                if let iconName = urgent.iconName {
+                    Image(systemName: iconName)
+                        .foregroundStyle(urgent.tone.color())
+                } else {
+                    Image("badgerpaw.fill")
+                        .foregroundStyle(urgent.tone.color())
+                }
                 Text(urgent.title).font(.headline).lineLimit(1)
             }
             countdown(to: urgent.nextFire).font(.title2).monospacedDigit()
-                .foregroundStyle(tintColor(urgent.tint))
+                .foregroundStyle(urgent.tone.color())
             if count > 1 {
                 Text("+\(count - 1) more badgering").font(.caption).foregroundStyle(.secondary)
             }
@@ -74,7 +79,7 @@ struct BadgerWidgetView: View {
                 Label("Done", systemImage: "checkmark").font(.caption).frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.green)
+            .tint(DesignTokens.positive)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -87,9 +92,6 @@ struct BadgerWidgetView: View {
             Text("now")
         }
     }
-
-    /// Map a stored tint token to a color via the shared escalation palette (§16, CP6).
-    private func tintColor(_ token: String) -> Color { EscalationPalette.tintColor(token) }
 }
 
 struct BadgerMeWidget: Widget {
