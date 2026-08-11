@@ -84,7 +84,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("BadgerMe")
+            .navigationTitle("Badgers")
             .safeAreaInset(edge: .bottom) {
                 if !badgers.isEmpty { newBadgerButton }
             }
