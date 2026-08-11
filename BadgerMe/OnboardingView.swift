@@ -27,7 +27,13 @@ struct OnboardingView: View {
             Spacer()
         }
         .padding(Space.xl)
-        .task { await permissions.refresh() }
+        .task {
+            #if DEBUG
+            let a = ProcessInfo.processInfo.arguments
+            if let i = a.firstIndex(of: "-uiOnboardStep"), i + 1 < a.count, let n = Int(a[i + 1]) { step = n }
+            #endif
+            await permissions.refresh()
+        }
     }
 
     private var welcome: some View {
@@ -37,7 +43,7 @@ struct OnboardingView: View {
                 .accessibilityHidden(true)
 
             Text("BadgerMe").font(.largeTitle.bold())
-            Text("A Badger keeps raising the stakes on a commitment — a ladder of increasingly insistent alerts — until you mark it done. It's meant to be hard to ignore.")
+            Text("I'm here to annoy you — relentlessly, and for your own good. Most reminders buzz once and politely get out of your way. Not me. I start with a polite notification, but ignore that and I dig in — louder and harder to wave off each time. I don't stop until you mark the task done.")
                 .font(.badgerVoice(.body))
                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
             
@@ -51,7 +57,7 @@ struct OnboardingView: View {
     private var notificationsStep: some View {
         permissionStep(
             icon: "bell.fill", title: "Notifications",
-            rationale: "The gentler rungs of a ladder are notifications. BadgerMe needs permission to send them.",
+            rationale: "Notifications are how I reach you at first — a tap on the shoulder, easy enough to brush off. Give me permission to use them so I can start pestering you. Politely. For now.",
             allowed: permissions.notifications.isAllowed,
             primaryTitle: "Allow Notifications",
             request: { await permissions.requestNotifications() },
@@ -61,7 +67,7 @@ struct OnboardingView: View {
     private var alarmsStep: some View {
         permissionStep(
             icon: "alarm.fill", title: "Alarms",
-            rationale: "The loudest rungs are alarms — so BadgerMe can reach you even on silent or during a Focus. This is what makes a Badger hard to ignore.",
+            rationale: "When a tap on the shoulder stops working, I reach for alarms — loud, persistent, and able to cut through silent mode and Focus, the very settings you'd use to duck me. Give me permission so I can really badger you. Only when you make me.",
             allowed: permissions.alarms == .authorized,
             primaryTitle: "Allow Alarms",
             request: { _ = await permissions.requestAlarms() },
@@ -72,17 +78,17 @@ struct OnboardingView: View {
         VStack(spacing: Space.md) {
             Image("badgerpaw.fill").font(.system(size: 48)).foregroundStyle(.tint)
                 .accessibilityHidden(true)
-            Text("You're set").font(.title.bold())
+            Text("Ready to go").font(.title.bold())
             VStack(alignment: .leading, spacing: Space.sm) {
-                conceptRow("target", "A Badger is one commitment you keep putting off.")
-                conceptRow("chart.line.uptrend.xyaxis", "It climbs a ladder of louder alerts until you mark it done.")
-                conceptRow("moon.zzz.fill", "Snooze it too often and it escalates itself.")
+                conceptRow("target", "Give me one thing you really need to do.")
+                conceptRow("chart.line.uptrend.xyaxis", "I'll keep getting louder until you mark it done.")
+                conceptRow("moon.zzz.fill", "Snooze me too often and I'll take it as encouragement.")
             }
             .font(.badgerVoice(.callout))
             .foregroundStyle(.secondary)
             Button("Create your first Badger") { onComplete(true) }
                 .buttonStyle(.borderedProminent).controlSize(.large)
-            Button("I'll look around first") { onComplete(false) }.font(.footnote)
+            Button("I'll procrastinate for a bit") { onComplete(false) }.font(.footnote)
         }
     }
 
