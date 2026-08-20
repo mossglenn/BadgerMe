@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BadgerMe: The reminder that refuses to be ignored</title>
 <meta name="description" content="BadgerMe puts a single-minded little agent in charge of one commitment. It nags you with alerts that escalate until you actually do the thing. On your device only — nothing is collected.">
-<link rel="icon" href="favicon.svg">
+<link rel="icon" type="image/svg+xml" href="BadgerMe-appIcon-rounded.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -39,7 +39,7 @@
         <p class="pill-note" style="margin-top:1.1rem">It will not forget. That's the entire feature.</p>
       </div>
       <div>
-        <img class="hero-illu" src="BadgerMe-appIcon.svg" alt="A badger, dead set on getting your attention." width="25%">
+        <img class="hero-illu" src="BadgerMe-appIcon-rounded.svg" alt="A badger, dead set on getting your attention.">
       </div>
     </div>
   </section>
@@ -51,28 +51,74 @@
         <h2>One commitment. A ladder of alerts that keeps climbing.</h2>
         <p class="lede" style="max-width:52ch">Each Badger climbs a ladder of rungs. Every rung fires an alert, and each one can hit harder than the last — quiet at first, breakthrough at the top. You choose the shape.</p>
       </div>
-      <div class="ladder">
-        <div class="rung cool">
-          <span class="rung-no">01</span>
-          <div>
-            <h3>Armed &amp; quiet</h3>
-            <p>A soft notification. Easy to catch, easy to act on. If you do the thing here, the Badger never has to raise its voice.</p>
+      <div class="showcase">
+        <div class="showcase-text">
+          <div class="ladder">
+            <div class="rung cool">
+              <span class="rung-no">01</span>
+              <div>
+                <h3>Armed &amp; quiet</h3>
+                <p>A soft notification. Easy to catch, easy to act on. If you do the thing here, the Badger never has to raise its voice.</p>
+              </div>
+            </div>
+            <div class="rung warm">
+              <span class="rung-no">02</span>
+              <div>
+                <h3>Escalating</h3>
+                <p>Ignore it and the alerts get more insistent — louder, more prominent, harder to swipe past without a decision.</p>
+              </div>
+            </div>
+            <div class="rung hot">
+              <span class="rung-no">03</span>
+              <div>
+                <h3>Breakthrough</h3>
+                <p>The top rung sounds through Silent and Focus using Apple's alarm system, and simply repeats until you resolve it. There is no "gave up."</p>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="rung warm">
-          <span class="rung-no">02</span>
-          <div>
-            <h3>Escalating</h3>
-            <p>Ignore it and the alerts get more insistent — louder, more prominent, harder to swipe past without a decision.</p>
-          </div>
+        <figure class="showcase-media">
+          <img class="shot" width="980" height="2000"
+               src="BadgerMe-screenshot-list-web.png"
+               alt="The BadgerMe list showing four Badgers: Water Plants (pending), Send Invoice at level 1 of 3, Call Dentist at level 2 of 3, and Take Meds at level 3 of 3, each with a paw icon coloured by heat.">
+          <figcaption>Heat is the whole ladder, made visible: sage → amber → red.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="in-action">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">On your Lock Screen</p>
+        <h2>It meets you where you already are.</h2>
+        <p class="lede" style="max-width:52ch">A Badger doesn't wait for you to open the app. It rides the Lock Screen and the Dynamic Island as a live countdown — and you can settle it right there.</p>
+      </div>
+
+      <div class="showcase">
+        <div class="showcase-text">
+          <h3>Quiet, at first</h3>
+          <p>The early rungs are ordinary notifications carrying a live countdown. Tap <strong>Done</strong> and the Badger is satisfied; tap <strong>Snooze</strong> and it steps back — no unlocking, no opening anything.</p>
         </div>
-        <div class="rung hot">
-          <span class="rung-no">03</span>
-          <div>
-            <h3>Breakthrough</h3>
-            <p>The top rung sounds through Silent and Focus using Apple's alarm system, and simply repeats until you resolve it. There is no "gave up."</p>
-          </div>
+        <figure class="showcase-media">
+          <img class="shot" width="980" height="2000"
+               src="BadgerMe-screenshot-live-activity-web.png"
+               alt="A BadgerMe Live Activity on the iPhone Lock Screen showing Send Invoice at level 1 of 3 with a one-minute countdown and Done and Snooze buttons.">
+          <figcaption>Send Invoice · level 1 of 3</figcaption>
+        </figure>
+      </div>
+
+      <div class="showcase reverse">
+        <div class="showcase-text">
+          <h3>Loud, when it has to be</h3>
+          <p>Keep ignoring it and the top rung arrives as a full-screen alarm — sounding <strong>through Silent and an active Focus</strong> on Apple's alarm system, the same way a normal iPhone alarm does. One button ends it: <strong>I did it</strong>.</p>
         </div>
+        <figure class="showcase-media">
+          <img class="shot" width="980" height="2000"
+               src="BadgerMe-screenshot-locked-alarm-web.png"
+               alt="A full-screen BadgerMe breakthrough alarm for Send Invoice showing a large red 'I did it' button and a slide-to-stop control.">
+          <figcaption>The breakthrough rung · "I did it" marks it done</figcaption>
+        </figure>
       </div>
     </div>
   </section>

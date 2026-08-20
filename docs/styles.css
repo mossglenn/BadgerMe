@@ -93,6 +93,9 @@ a:hover { border-color: var(--cool); }
 /* ---------- layout ---------- */
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 clamp(20px, 5vw, 40px); }
 
+/* Nothing overflows its width. Media is fluid down to any viewport. */
+img, svg, video { max-width: 100%; height: auto; }
+
 .site-head {
   position: sticky; top: 0; z-index: 30;
   background: color-mix(in srgb, var(--bg) 86%, transparent);
@@ -107,8 +110,8 @@ a:hover { border-color: var(--cool); }
 .brand .logo {
   width: 26px; height: 26px; flex: none; display: block;
   background-color: var(--ink);
-  -webkit-mask: url("badgerprint-large.svg") center / contain no-repeat;
-          mask: url("badgerprint-large.svg") center / contain no-repeat;
+  -webkit-mask: url("badgerpaw-circle-filled.svg") center / contain no-repeat;
+          mask: url("badgerpaw-circle-filled.svg") center / contain no-repeat;
 }
 .wordmark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.12rem; }
 
@@ -136,9 +139,14 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
 .hero { padding: clamp(3rem, 9vw, 7rem) 0 clamp(2.5rem, 6vw, 4.5rem); }
 /* Stacked hero: value prop first, then the badger as a full-width banner.
    The illustration is ~2:1, so a banner reads far better than a narrow column. */
-.hero-grid { display: grid; grid-template-columns: 1fr; gap: clamp(1.2rem, 3vw, 2rem); }
+.hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.2rem, 3vw, 2rem); align-items: center; }
 .hero h1 { margin-top: 0.2em; }
 .hero .lede { margin: 0.2em 0 1.4rem; }
+/* Stack the hero on narrow screens — two columns get cramped below ~760px. */
+@media (max-width: 760px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-illu { width: min(100%, 420px); margin-top: 0.6rem; }
+}
 
 /* Finished multi-tone artwork — never recoloured. Just sized and lifted a
    touch off the near-matching background with a whisper of glow + a soft shadow. */
@@ -250,6 +258,55 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
 .linkish { background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--ink-dim); font: inherit; cursor: pointer; padding: 0; }
 .linkish:hover { border-color: var(--cool); color: var(--ink); }
 
+/* ---------- device screenshots ---------- */
+/* The screenshots are transparent PNGs with the iPhone frame baked in, so a
+   drop-shadow on the alpha gives a real device shadow on any background.
+   To add or swap a shot later: drop a <img class="shot"> into a .showcase-media
+   (feature blocks) or a .prose-shot figure (doc pages). Nothing else needed. */
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 18px 42px rgba(0,0,0,0.5));
+}
+
+/* Feature block: prose on one side, a phone on the other. Stacks on narrow. */
+.showcase {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1.6rem, 4vw, 2.6rem);
+  align-items: center;
+}
+.showcase + .showcase { margin-top: var(--step); }
+.showcase-media { justify-self: center; width: 100%; max-width: 288px; margin: 0; }
+.showcase-media figcaption,
+.shot-cap {
+  margin-top: 0.95rem;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  text-align: center;
+}
+@media (min-width: 760px) {
+  .showcase { grid-template-columns: 1fr minmax(220px, 288px); }
+  /* .reverse puts the phone on the left without touching DOM order (keeps
+     text first for screen readers and the mobile stack). */
+  .showcase.reverse { grid-template-columns: minmax(220px, 288px) 1fr; }
+  .showcase.reverse .showcase-text { order: 2; }
+}
+
+/* Centered phone inside a reading column (guide / support / doc pages). */
+.prose-shot { max-width: 280px; margin: 2.2rem auto; }
+.prose-shot .shot { margin: 0 auto; }
+.prose-shot figcaption {
+  margin-top: 0.9rem;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  font-style: italic;
+  text-align: center;
+}
+
 /* ---------- light mode (dark-first, but don't blind light-mode users) ---------- */
 @media (prefers-color-scheme: light) {
   :root {
@@ -267,4 +324,6 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
   .btn-primary { background: #16181c; color: #f7f5ef; border-color: #16181c; }
   .btn-primary:hover { background: #000; border-color: #000; }
   .site-head { background: color-mix(in srgb, var(--bg) 82%, transparent); }
+  /* Softer device shadow on the light background. */
+  .shot { filter: drop-shadow(0 14px 34px rgba(20,23,28,0.22)); }
 }
