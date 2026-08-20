@@ -6,6 +6,24 @@
 <title>Guide — BadgerMe</title>
 <meta name="description" content="How BadgerMe works: what a Badger is, how escalation ladders climb, why silencing an alert isn't the same as being done, and how snooze escalation works.">
 <link rel="icon" type="image/svg+xml" href="BadgerMe-appIcon-rounded.svg">
+<link rel="canonical" href="https://badgerme.amosglenn.com/guide.html">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14171c">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f2ec">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- Social share. Absolute URLs use the production domain https://badgerme.amosglenn.com. -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="BadgerMe">
+<meta property="og:title" content="Guide — BadgerMe">
+<meta property="og:description" content="How BadgerMe works: what a Badger is, how escalation ladders climb, why silencing an alert isn't the same as being done, and how snooze escalation works.">
+<meta property="og:url" content="https://badgerme.amosglenn.com/guide.html">
+<meta property="og:image" content="https://badgerme.amosglenn.com/BadgerMe-og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="BadgerMe — the reminder that refuses to be ignored, shown on an iPhone.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Guide — BadgerMe">
+<meta name="twitter:description" content="How BadgerMe works: what a Badger is, how escalation ladders climb, why silencing an alert isn't the same as being done, and how snooze escalation works.">
+<meta name="twitter:image" content="https://badgerme.amosglenn.com/BadgerMe-og-card.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -49,6 +67,39 @@
           <li><strong>Breakthrough rungs</strong> are alarms. They use Apple's alarm system (AlarmKit), which is why they can sound through Silent and an active Focus — the same way a normal iPhone alarm does.</li>
         </ul>
         <p>The heat of the ladder — cool, to warm, to hot — is exactly the escalation you feel. You pick the shape when you create the Badger: <strong>Gentle</strong> (long and soft), <strong>Default</strong> (balanced), or <strong>Urgent</strong> (short and loud), and you can build your own.</p>
+        <div class="shot-row shot-row-3">
+          <figure>
+            <img class="uishot" loading="lazy" decoding="async" width="720" height="1489"
+                 src="BadgerMe-screenshot-ladder-gentle-web.png"
+                 alt="The Gentle ladder editor: Rung 1 waits 0 min (Notify, Ahem), Rung 2 waits 15 min (Time-sensitive, Badger), Rung 3 waits 30 min (Time-sensitive, Badger); snoozes before escalating: 3.">
+            <figcaption><strong>Gentle</strong>long &amp; soft · 0 → 15 → 30 min</figcaption>
+          </figure>
+          <figure>
+            <img class="uishot" loading="lazy" decoding="async" width="720" height="1489"
+                 src="BadgerMe-screenshot-ladder-default-web.png"
+                 alt="The Default ladder editor: Rung 1 at 0 min (Notify, Ahem), Rung 2 at 5 min (Time-sensitive, Badger), Rung 3 at 10 min (Alarm breakthrough, Red Alert); snoozes before escalating: 2.">
+            <figcaption><strong>Default</strong>balanced · 0 → 5 → 10 min</figcaption>
+          </figure>
+          <figure>
+            <img class="uishot" loading="lazy" decoding="async" width="720" height="1489"
+                 src="BadgerMe-screenshot-ladder-urgent-web.png"
+                 alt="The Urgent ladder editor: Rung 1 at 0 min (Time-sensitive, Badger), Rung 2 at 2 min (Alarm breakthrough, Red Alert), Rung 3 at 3 min (Alarm, Red Alert); snoozes before escalating: 1.">
+            <figcaption><strong>Urgent</strong>short &amp; loud · 0 → 2 → 3 min</figcaption>
+          </figure>
+        </div>
+        <p class="beat">Same three rungs, three different tempers — and the snooze budget tightens as they heat up.</p>
+      </section>
+
+      <section>
+        <h2>Every rung has a voice</h2>
+        <p>Each rung plays a sound, and the built-in three climb the same ramp the ladder does: <strong>Ahem</strong>, a polite throat-clear that's easy to ignore early on; <strong>Badger</strong>, the signature nudge — insistent but still civil; and <strong>Red Alert</strong>, a klaxon for when civility has plainly failed.</p>
+        <p>Prefer your own? Import any sound <strong>30 seconds or shorter</strong> in a CAF, WAV, or AIFF container (Linear PCM, IMA4, µ-law, or A-law). If you ever delete a sound a Badger was using, it quietly falls back to the system default.</p>
+        <figure class="prose-shot" style="max-width:300px">
+          <img class="uishot" loading="lazy" decoding="async" width="720" height="1489"
+               src="BadgerMe-screenshot-sounds-web.png"
+               alt="The Sounds screen: built-in sounds Ahem, Badger and Red Alert with short descriptions and play buttons, an empty 'My Sounds' section with an 'Import a sound' button, and the supported-formats note.">
+          <figcaption>Three built-in voices, or import your own.</figcaption>
+        </figure>
       </section>
 
       <section>
@@ -57,7 +108,7 @@
         <p>A Badger is only satisfied when you mark it <strong>Done</strong>. Done resolves the whole thing and cancels everything still queued. You can mark a Badger done straight from the alarm, from a notification, from the Lock Screen, or by asking Siri.</p>
         <p class="beat">Dismissing a badger is not the same as convincing it.</p>
         <figure class="prose-shot">
-          <img class="shot" width="980" height="2000"
+          <img class="shot" loading="lazy" decoding="async" width="980" height="2000"
                src="BadgerMe-screenshot-details-web.png"
                alt="A Badger's detail screen: Done, Snooze, Stop and Delete actions, a Focus tags row, and a history log listing 'Alarm Dismissed' and 'Last Rung Repeated' entries at level 3.">
           <figcaption>Done, Snooze, Stop, Delete — above a running history of every rung that fired.</figcaption>
@@ -96,7 +147,7 @@
         </ul>
         <p>You can drive all of it hands-free, too: create, snooze, and mark done through Siri, Shortcuts, the widget, and Control Center.</p>
         <figure class="prose-shot">
-          <img class="shot" width="980" height="2000"
+          <img class="shot" loading="lazy" decoding="async" width="980" height="2000"
                src="BadgerMe-screenshot-live-activity-unlocked-web.png"
                alt="A BadgerMe Live Activity in the iPhone Dynamic Island showing Take Meds at level 1 of 3 with Done and Snooze buttons, above the Home Screen.">
           <figcaption>Resolve a Badger from the Dynamic Island — without opening the app.</figcaption>

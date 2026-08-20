@@ -7,8 +7,8 @@
    │  Use a dedicated, app-specific address (not your personal     │
    │  inbox) so you can forward or burn it if it ever gets spammed.│
    └─────────────────────────────────────────────────────────────┘ */
-const CONTACT_USER   = "support";       // <-- the part before the @
-const CONTACT_DOMAIN = "badgerme.app";  // <-- the part after the @
+const CONTACT_USER   = "badgerme";      // <-- the part before the @
+const CONTACT_DOMAIN = "amosglenn.com"; // <-- the part after the @
 const CONTACT_SUBJECT = "BadgerMe";     // pre-filled email subject
 
 (function () {

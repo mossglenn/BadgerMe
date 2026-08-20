@@ -154,7 +154,6 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
   display: block; height: auto;
   width: min(100%, 620px);
   margin: 1.6rem auto 0;
-  //background: radial-gradient(58% 62% at 50% 46%, rgba(233,230,222,0.05), transparent 72%);
   filter: drop-shadow(0 16px 40px rgba(0,0,0,0.5));
 }
 
@@ -171,6 +170,8 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
 .btn-primary { background: var(--ink); color: #14171c; border-color: var(--ink); font-weight: 700; }
 .btn-primary:hover { background: #fff; border-color: #fff; }
 .pill-note { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-faint); }
+/* Price / launch line — a touch more present than the wry mono note above. */
+.price-note { color: var(--ink-dim); font-size: 0.98rem; margin: 0; }
 
 /* ---------- sections ---------- */
 .section { padding: var(--step) 0; border-top: 1px solid var(--line-soft); }
@@ -190,6 +191,26 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
 .rung.cool { --heat: var(--cool); }
 .rung.warm { --heat: var(--warm); }
 .rung.hot  { --heat: var(--hot); }
+
+/* use-case strip: concrete jobs, hairline-divided, no artwork.
+   1px grid gaps over a line-coloured backing paint the dividers. */
+.usecase-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 1px; grid-template-columns: 1fr;
+  background: var(--line-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+@media (min-width: 560px) { .usecase-list { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 900px) { .usecase-list { grid-template-columns: repeat(4, 1fr); } }
+.usecase-list li {
+  background: var(--surface);
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.usecase-list strong { color: var(--ink); font-weight: 700; letter-spacing: -0.01em; }
+.usecase-list span { color: var(--ink-dim); font-size: 0.94rem; line-height: 1.45; }
 
 /* privacy panel */
 .panel {
@@ -282,7 +303,7 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
 .showcase-media figcaption,
 .shot-cap {
   margin-top: 0.95rem;
-  color: var(--ink-faint);
+  color: var(--ink-dim);   /* WCAG AA: --ink-faint fails at this size */
   font-family: var(--font-mono);
   font-size: 0.76rem;
   line-height: 1.5;
@@ -301,11 +322,33 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
 .prose-shot .shot { margin: 0 auto; }
 .prose-shot figcaption {
   margin-top: 0.9rem;
-  color: var(--ink-faint);
+  color: var(--ink-dim);   /* WCAG AA */
   font-size: 0.9rem;
   font-style: italic;
   text-align: center;
 }
+
+/* Frameless UI screenshots (no device bezel baked in): round the corners
+   ourselves and lift with a border + shadow so they read as clean app cards.
+   Use .uishot for these; .shot stays for the transparent phone mockups. */
+.uishot {
+  display: block; width: 100%; height: auto;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 38px rgba(0,0,0,0.42);
+}
+
+/* A row of screenshots that compare (e.g. the three ladder shapes).
+   Stacks on narrow, goes side-by-side once there's room. */
+.shot-row { display: grid; gap: clamp(14px, 3vw, 22px); grid-template-columns: 1fr; margin: 2.2rem 0 0.5rem; }
+@media (min-width: 620px) { .shot-row-3 { grid-template-columns: repeat(3, 1fr); } }
+.shot-row figure { margin: 0; }
+.shot-row figcaption {
+  margin-top: 0.8rem; text-align: center;
+  font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+.shot-row figcaption strong { display: block; color: var(--ink); font-size: 0.92rem; letter-spacing: -0.01em; margin-bottom: 1px; }
 
 /* ---------- light mode (dark-first, but don't blind light-mode users) ---------- */
 @media (prefers-color-scheme: light) {
@@ -326,4 +369,5 @@ h3 { font-size: 1.14rem; letter-spacing: -0.01em; font-weight: 700; margin: 0 0 
   .site-head { background: color-mix(in srgb, var(--bg) 82%, transparent); }
   /* Softer device shadow on the light background. */
   .shot { filter: drop-shadow(0 14px 34px rgba(20,23,28,0.22)); }
+  .uishot { box-shadow: 0 12px 30px rgba(20,23,28,0.16); }
 }

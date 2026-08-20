@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!-- Source for BadgerMe-og-card.png (the social share image).
+     To regenerate after editing: render this file at 1200x630 and screenshot
+     to BadgerMe-og-card.png. It reuses the site's palette and the list shot.
+     Not linked from anywhere; safe to leave in the repo as the card's source. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg:#14171c; --surface:#1b1f26; --line:#2a313c;
+    --ink:#e9e6de; --ink-dim:#9aa1ac; --ink-faint:#6b7280;
+    --cool:#4fb0a5; --warm:#e8b54b; --hot:#e5533d;
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:1200px; height:630px; }
+  .card {
+    width:1200px; height:630px; background:var(--bg); color:var(--ink);
+    font-family:var(--font-sans); display:flex; align-items:center;
+    position:relative; overflow:hidden;
+  }
+  /* signature heat spine down the left edge */
+  .spine { position:absolute; left:0; top:0; bottom:0; width:10px;
+    background:linear-gradient(180deg,var(--cool) 0%,var(--cool) 18%,var(--warm) 52%,var(--hot) 86%,var(--hot) 100%); }
+  .left { flex:1; padding:0 0 0 96px; max-width:720px; }
+  .eyebrow { font-family:var(--font-mono); font-size:20px; letter-spacing:0.22em;
+    text-transform:uppercase; color:var(--cool); margin-bottom:26px; }
+  .wordmark { font-size:104px; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .tagline { font-size:40px; font-weight:600; letter-spacing:-0.01em; line-height:1.18;
+    color:var(--ink); margin-top:26px; max-width:15ch; }
+  .heatbar { margin-top:40px; width:280px; height:8px; border-radius:999px;
+    background:linear-gradient(90deg,var(--cool),var(--warm),var(--hot)); }
+  .foot { margin-top:26px; font-family:var(--font-mono); font-size:19px; color:var(--ink-dim); }
+  .right { width:430px; height:630px; position:relative; }
+  .right img { position:absolute; right:34px; top:80px; width:360px; height:auto;
+    filter:drop-shadow(0 26px 60px rgba(0,0,0,0.6)); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="spine"></div>
+  <div class="left">
+    <div class="eyebrow">iPhone · iOS 26</div>
+    <div class="wordmark">BadgerMe</div>
+    <div class="tagline">The reminder that refuses to be ignored.</div>
+    <div class="heatbar"></div>
+    <div class="foot">Free · No ads · Nothing leaves your phone</div>
+  </div>
+  <div class="right">
+    <img src="BadgerMe-screenshot-list-web.png" alt="">
+  </div>
+</div>
+</body>
+</html>
